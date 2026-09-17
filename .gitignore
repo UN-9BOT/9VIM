@@ -6,6 +6,8 @@
 .idea/
 # Local Codex/GSD runtime; install per workspace, do not version generated agents.
 .codex/
+# Local GSD execution sentinels; planning artifacts live under .planning/.
+.gsd/
 .DS_Store
 /build
 /captures
