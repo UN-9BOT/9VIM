@@ -8,7 +8,7 @@
 
 ### Stable Fork
 
-- [ ] **REQ-stable-fork-baseline**: Establish a tagged, reproducible fork baseline with CI unit tests, lint/style checks, debug APK build, selected upstream fixes, explicit custom-layout override semantics, and a captured Enter/newline regression.
+- [x] **REQ-stable-fork-baseline**: Establish a tagged, reproducible fork baseline with CI unit tests, lint/style checks, debug APK build, selected upstream fixes, explicit custom-layout override semantics, and a captured Enter/newline regression.
   - **Acceptance:** A clean checkout builds through one CI command; all unit tests pass; the custom-layout picker works on current Android; a baseline tag/commit exists; historic Dependabot PRs are not bulk-merged.
 
 ### Multilingual Profiles and Settings
@@ -71,7 +71,7 @@ None defined.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| REQ-stable-fork-baseline | Phase 1 | Pending |
+| REQ-stable-fork-baseline | Phase 1 | Complete |
 | REQ-language-profiles | Phase 2 | Pending |
 | REQ-language-settings | Phase 2 | Pending |
 | REQ-quick-language-switch | Phase 3 | Pending |
@@ -87,6 +87,7 @@ None defined.
 | REQ-release-hardening | Phase 6 | Pending |
 
 **Coverage:**
+
 - v1 requirements: 14 total
 - Mapped to phases: 14
 - Unmapped: 0 ✓
