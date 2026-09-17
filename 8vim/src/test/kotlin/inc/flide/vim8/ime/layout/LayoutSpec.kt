@@ -57,6 +57,7 @@ class LayoutSpec : FunSpec({
             every { packageName } returns ""
         }
         every { DigestUtils.md5Hex(any<InputStream>()) } returns ""
+        every { DigestUtils.md5Hex(any<ByteArray>()) } returns ""
     }
 
     beforeTest {
@@ -118,6 +119,14 @@ class LayoutSpec : FunSpec({
                 CustomLayout(uri).inputStream(context) shouldBeLeft ExceptionWrapperError(
                     exception
                 )
+            }
+
+            test("md5 closes the provider stream") {
+                val stream = TrackingInputStream("content".toByteArray())
+                every { androidContentResolver.openInputStream(any()) } returns stream
+
+                CustomLayout(uri).md5(context).getOrNull() shouldBe ""
+                stream.closed shouldBe true
             }
         }
 
@@ -219,6 +228,38 @@ class LayoutSpec : FunSpec({
                     keyboardData,
                     "second.yaml"
                 )
+            }
+
+            test("reparses changed bytes for the same URI") {
+                val layout = spyk(CustomLayout(Uri.parse("content://layouts/changed")))
+                val first = TrackingInputStream("first".toByteArray())
+                val second = TrackingInputStream("second".toByteArray())
+                val keyboardData = KeyboardData(characterSets = listOf(listOf(null)))
+                val parsed = mutableListOf<String>()
+
+                every { layout.inputStream(any()) } returnsMany listOf(
+                    first.right(),
+                    second.right()
+                )
+                every { DigestUtils.md5Hex(any<ByteArray>()) } returnsMany listOf(
+                    "first-md5",
+                    "second-md5"
+                )
+                every { cache.load(any()) } returns None
+                every { cache.add(any(), any()) } answers {
+                    /* The cache is not needed to prove digest invalidation. */
+                }
+                every { layoutLoader.loadKeyboardData(any()) } answers {
+                    parsed += firstArg<InputStream>().readBytes().decodeToString()
+                    keyboardData.right()
+                }
+
+                layout.loadKeyboardData(layoutLoader, context) shouldBeRight keyboardData
+                layout.loadKeyboardData(layoutLoader, context) shouldBeRight keyboardData
+
+                parsed shouldBe listOf("first", "second")
+                first.closed shouldBe true
+                second.closed shouldBe true
             }
 
             test("closes the snapshot when the parser returns a typed error") {
