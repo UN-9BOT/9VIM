@@ -30,7 +30,17 @@ Gradle gates in one invocation:
 | Android build tools | `36.0.0` | manifest and CI provisioning |
 
 The PR workflow invokes this command for every pull request targeting
-`master`; connected-device tests are separate smoke evidence.
+`master`; connected-device tests are separate smoke evidence. The final exact
+SHA proof is a blocking Plan 06 checkpoint and is not implied by this ledger.
+
+## Pre-proof environment boundary
+
+The original host preflight observed Java `26` and no Android SDK Platform 36
+or Build Tools `36.0.0`. That is a host-tooling limitation, not a project
+result: the canonical command must only be evaluated with the manifest-matched
+Java 17/Android SDK environment. A pinned Docker environment may supply that
+toolchain, but its output still has to be matched to the exact committed SHA
+at the Plan 06 proof checkpoint.
 
 ## Mandatory upstream provenance
 
@@ -114,7 +124,8 @@ change, optional preference, resource string, or adoption evidence exists.
 
 ## Final proof fields — Plan 06
 
-These fields are intentionally left for the final proof step:
+These fields are intentionally left for the final proof step; no final green
+result or tag creation is asserted here:
 
 - Final CI run URL: `TBD — Plan 06`
 - Final CI commit SHA: `TBD — Plan 06`
