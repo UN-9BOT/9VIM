@@ -114,7 +114,7 @@ Each task was implemented with RED-first TDD commits and production commits:
 2. **Task 2: Separate URI identity and metadata from the MD5 content cache** - `a89ce9b4` (RED), `69f833f7` (GREEN), `30a3cb54` (coverage)
 3. **Task 3: Prune stale URIs with active-aware previous/default fallback** - `0dc0ff49` (RED), `b56a365c` (GREEN), `db9990a7` (validation coverage), `e458326b` (backup-safe fallback identity)
 
-The plan metadata commit is pending after state and roadmap updates.
+Plan metadata is recorded separately in commit `4f51232f` after the task commits.
 
 ## TDD Gate Compliance
 
