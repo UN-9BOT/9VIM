@@ -2,6 +2,7 @@ package inc.flide.vim8.ime.keyboard.text
 
 import android.content.Context
 import android.view.KeyEvent
+import android.view.inputmethod.EditorInfo
 import inc.flide.vim8.Vim8ImeService
 import inc.flide.vim8.appPreferenceModel
 import inc.flide.vim8.datastore.CachedPreferenceModel
@@ -212,6 +213,84 @@ class KeyboardManagerSpec : FunSpec(
                 keyboardState setProperty "isCtrlOn" value false
                 keyboardState setProperty "isCtrlOn" value true
                 keyboardState setProperty "isFnOn" value true
+            }
+        }
+
+        context("Enter routing through onInputKeyUp") {
+            test("multiline NONE routes a real Enter") {
+                every {
+                    editor.imeOptions
+                } returns ImeOptions.wrap(ImeOptions.Action.NONE.toInt())
+
+                val manager = KeyboardManager(context)
+                manager.onInputKeyUp(KeyEvent.KEYCODE_ENTER.toKeyboardAction(), repeat = false)
+
+                verify(exactly = 1) { editor.performEnter() }
+                verify(exactly = 0) { editor.performEnterAction(any()) }
+            }
+
+            test("multiline NO_ENTER_ACTION routes a real Enter") {
+                every {
+                    editor.imeOptions
+                } returns ImeOptions.wrap(
+                    ImeOptions.Action.NONE.toInt() or EditorInfo.IME_FLAG_NO_ENTER_ACTION
+                )
+
+                val manager = KeyboardManager(context)
+                manager.onInputKeyUp(KeyEvent.KEYCODE_ENTER.toKeyboardAction(), repeat = false)
+
+                verify(exactly = 1) { editor.performEnter() }
+                verify(exactly = 0) { editor.performEnterAction(any()) }
+            }
+
+            test("single-line SEND routes an editor action") {
+                every {
+                    editor.imeOptions
+                } returns ImeOptions.wrap(ImeOptions.Action.SEND.toInt())
+
+                val manager = KeyboardManager(context)
+                manager.onInputKeyUp(KeyEvent.KEYCODE_ENTER.toKeyboardAction(), repeat = false)
+
+                verify(exactly = 1) {
+                    editor.performEnterAction(ImeOptions.Action.SEND)
+                }
+                verify(exactly = 0) { editor.performEnter() }
+            }
+
+            test("single-line DONE routes an editor action") {
+                every {
+                    editor.imeOptions
+                } returns ImeOptions.wrap(ImeOptions.Action.DONE.toInt())
+
+                val manager = KeyboardManager(context)
+                manager.onInputKeyUp(KeyEvent.KEYCODE_ENTER.toKeyboardAction(), repeat = false)
+
+                verify(exactly = 1) {
+                    editor.performEnterAction(ImeOptions.Action.DONE)
+                }
+                verify(exactly = 0) { editor.performEnter() }
+            }
+
+            withData(
+                nameFn = { "NO_ENTER_ACTION wins over ${it.name}" },
+                ImeOptions.Action.SEND,
+                ImeOptions.Action.DONE,
+                ImeOptions.Action.GO,
+                ImeOptions.Action.SEARCH,
+                ImeOptions.Action.NEXT,
+                ImeOptions.Action.PREVIOUS
+            ) { action ->
+                every {
+                    editor.imeOptions
+                } returns ImeOptions.wrap(
+                    action.toInt() or EditorInfo.IME_FLAG_NO_ENTER_ACTION
+                )
+
+                val manager = KeyboardManager(context)
+                manager.onInputKeyUp(KeyEvent.KEYCODE_ENTER.toKeyboardAction(), repeat = false)
+
+                verify(exactly = 1) { editor.performEnter() }
+                verify(exactly = 0) { editor.performEnterAction(any()) }
             }
         }
 
