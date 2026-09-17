@@ -7,7 +7,9 @@ import android.database.Cursor
 import android.net.Uri
 import android.provider.OpenableColumns
 import arrow.core.None
+import arrow.core.left
 import arrow.core.right
+import arrow.core.some
 import inc.flide.vim8.arbitraries.Arbitraries
 import inc.flide.vim8.cache
 import inc.flide.vim8.ime.layout.models.KeyboardData
@@ -24,8 +26,18 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.spyk
+import java.io.ByteArrayInputStream
 import java.io.InputStream
 import org.apache.commons.codec.digest.DigestUtils
+
+private class TrackingInputStream(bytes: ByteArray) : ByteArrayInputStream(bytes) {
+    var closed = false
+
+    override fun close() {
+        closed = true
+        super.close()
+    }
+}
 
 class LayoutSpec : FunSpec({
     lateinit var context: Context
@@ -53,7 +65,7 @@ class LayoutSpec : FunSpec({
         cache = mockk(relaxed = true) {
             every { load(any()) } returns None
         }
-        inputStream = mockk(relaxed = true)
+        inputStream = ByteArrayInputStream(byteArrayOf())
     }
 
     context("Embedded layout") {
@@ -150,6 +162,78 @@ class LayoutSpec : FunSpec({
                     keyboardData,
                     "content.yaml"
                 )
+            }
+            test("reads one closed snapshot for digest and parser") {
+                val uri = Uri.parse("content://layouts/snapshot")
+                val first = TrackingInputStream("first".toByteArray())
+                val second = TrackingInputStream("second".toByteArray())
+                val layout = spyk(CustomLayout(uri))
+                val keyboardData = KeyboardData(characterSets = listOf(listOf(null)))
+                var parsed = ""
+
+                every { layout.inputStream(any()) } returnsMany listOf(
+                    first.right(),
+                    second.right()
+                )
+                every { DigestUtils.md5Hex(any<InputStream>()) } answers {
+                    firstArg<InputStream>().readBytes().decodeToString()
+                }
+                every { DigestUtils.md5Hex(any<ByteArray>()) } returns "snapshot"
+                every { cache.load(any()) } returns None
+                every { layoutLoader.loadKeyboardData(any()) } answers {
+                    parsed = firstArg<InputStream>().readBytes().decodeToString()
+                    keyboardData.right()
+                }
+
+                layout.loadKeyboardData(layoutLoader, context) shouldBeRight keyboardData
+
+                parsed shouldBe "first"
+                first.closed shouldBe true
+                second.closed shouldBe false
+            }
+
+            test("derives URI metadata after reading raw cached data") {
+                val first = spyk(CustomLayout(Uri.parse("file:///first.yaml")))
+                val second = spyk(CustomLayout(Uri.parse("file:///second.yaml")))
+                val keyboardData = KeyboardData(characterSets = listOf(listOf(null)))
+                val cached = mutableMapOf<String, KeyboardData>()
+
+                every { first.inputStream(any()) } returns
+                    TrackingInputStream("same".toByteArray()).right()
+                every { second.inputStream(any()) } returns
+                    TrackingInputStream("same".toByteArray()).right()
+                every { DigestUtils.md5Hex(any<ByteArray>()) } returns "same-md5"
+                every { cache.load(any()) } answers {
+                    cached[firstArg()]?.some() ?: None
+                }
+                every { cache.add(any(), any()) } answers {
+                    cached[firstArg()] = secondArg()
+                }
+                every { layoutLoader.loadKeyboardData(any()) } returns keyboardData.right()
+
+                first.loadKeyboardData(layoutLoader, context) shouldBeRight KeyboardData.info.name.set(
+                    keyboardData,
+                    "first.yaml"
+                )
+                second.loadKeyboardData(layoutLoader, context) shouldBeRight KeyboardData.info.name.set(
+                    keyboardData,
+                    "second.yaml"
+                )
+            }
+
+            test("closes the snapshot when the parser returns a typed error") {
+                val uri = Uri.parse("content://layouts/parser-failure")
+                val stream = TrackingInputStream("invalid".toByteArray())
+                val layout = spyk(CustomLayout(uri))
+                val error = ExceptionWrapperError(Exception("parser failure"))
+
+                every { layout.inputStream(any()) } returns stream.right()
+                every { DigestUtils.md5Hex(any<ByteArray>()) } returns "invalid"
+                every { cache.load(any()) } returns None
+                every { layoutLoader.loadKeyboardData(any()) } returns error.left()
+
+                layout.loadKeyboardData(layoutLoader, context) shouldBeLeft error
+                stream.closed shouldBe true
             }
         }
     }
