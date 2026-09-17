@@ -96,11 +96,13 @@ class AvailableLayouts(private val layoutLoader: LayoutLoader, private val conte
     }
 
     private fun upsert(layout: Layout<*>, keyboardData: KeyboardData) {
-        layoutsWithKeyboardData
-            .keys
-            .filter { sameIdentity(it, layout) }
-            .toList()
-            .forEach { layoutsWithKeyboardData.remove(it) }
+        val existing = layoutsWithKeyboardData.keys.firstOrNull { sameIdentity(it, layout) }
+        if (existing != null) {
+            if (existing is CustomLayout) {
+                layoutsWithKeyboardData[existing] = keyboardData.toString()
+            }
+            return
+        }
         layoutsWithKeyboardData[layout] = keyboardData.toString()
     }
 

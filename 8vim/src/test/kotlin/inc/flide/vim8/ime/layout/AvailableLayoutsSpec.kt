@@ -31,6 +31,16 @@ import io.mockk.mockkStatic
 import io.mockk.verify
 import kotlin.random.Random
 
+private fun testUri(value: String): Uri {
+    val uri = mockk<Uri>()
+    every { uri.toString() } returns value
+    every { uri.scheme } returns value.substringBefore("://", "").takeIf { value.contains("://") }
+    every { uri.lastPathSegment } returns value.substringAfterLast('/').takeIf {
+        it.isNotEmpty() && it != value
+    }
+    return uri
+}
+
 class AvailableLayoutsSpec : WordSpec({
     lateinit var currentLayout: PreferenceData<Layout<*>>
     lateinit var previousValidLayout: PreferenceData<Layout<*>>
@@ -78,7 +88,7 @@ class AvailableLayoutsSpec : WordSpec({
 
     beforeTest {
         customLayout = mockkClass(CustomLayout::class)
-        every { customLayout.path } returns Uri.parse("uri")
+        every { customLayout.path } returns testUri("uri")
         currentValue = embeddedLayouts.first().first
         currentLayout = mockk(relaxed = true) {
             every { default } returns embeddedLayouts.first().first
@@ -180,7 +190,7 @@ class AvailableLayoutsSpec : WordSpec({
             val uri = "content://layouts/new"
             val keyboardData = KeyboardData(characterSets = listOf(listOf(null)))
             every { uri.toCustomLayout() } returns customLayout
-            every { customLayout.path } returns Uri.parse(uri)
+            every { customLayout.path } returns testUri(uri)
             every { customLayout.loadKeyboardData(any(), any()) } returns keyboardData.right()
             every { historyData.get() } returns emptySet()
 
@@ -197,7 +207,7 @@ class AvailableLayoutsSpec : WordSpec({
             val uri = "content://layouts/reused"
             val keyboardData = KeyboardData(characterSets = listOf(listOf(null)))
             every { uri.toCustomLayout() } returns customLayout
-            every { customLayout.path } returns Uri.parse(uri)
+            every { customLayout.path } returns testUri(uri)
             every { customLayout.loadKeyboardData(any(), any()) } returns keyboardData.right()
             historyValue = linkedSetOf(uri)
             every { historyData.get() } answers { historyValue }
@@ -221,8 +231,8 @@ class AvailableLayoutsSpec : WordSpec({
             val secondLayout = mockkClass(CustomLayout::class)
             every { firstUri.toCustomLayout() } returns customLayout
             every { secondUri.toCustomLayout() } returns secondLayout
-            every { customLayout.path } returns Uri.parse(firstUri)
-            every { secondLayout.path } returns Uri.parse(secondUri)
+            every { customLayout.path } returns testUri(firstUri)
+            every { secondLayout.path } returns testUri(secondUri)
             every { customLayout.loadKeyboardData(any(), any()) } returns keyboardData.right()
             every { secondLayout.loadKeyboardData(any(), any()) } returns keyboardData.right()
             historyValue = linkedSetOf(firstUri, secondUri)
@@ -241,7 +251,7 @@ class AvailableLayoutsSpec : WordSpec({
             val uri = "content://layouts/invalid"
             val error = ExceptionWrapperError(Exception("invalid"))
             every { uri.toCustomLayout() } returns customLayout
-            every { customLayout.path } returns Uri.parse(uri)
+            every { customLayout.path } returns testUri(uri)
             every { customLayout.loadKeyboardData(any(), any()) } returns error.left()
             historyValue = emptySet()
             currentValue = embeddedLayouts.first().first
@@ -256,7 +266,7 @@ class AvailableLayoutsSpec : WordSpec({
 
         "reject a zero-layer URI without mutating current or history" {
             val uri = "content://layouts/empty"
-            every { customLayout.path } returns Uri.parse(uri)
+            every { customLayout.path } returns testUri(uri)
             every { customLayout.loadKeyboardData(any(), any()) } returns KeyboardData().right()
 
             val availableLayouts = AvailableLayouts(layoutLoader, context)
@@ -270,7 +280,7 @@ class AvailableLayoutsSpec : WordSpec({
         "leave current layout unchanged when an inactive URI becomes stale" {
             val uri = "content://layouts/stale"
             every { uri.toCustomLayout() } returns customLayout
-            every { customLayout.path } returns Uri.parse(uri)
+            every { customLayout.path } returns testUri(uri)
             every { customLayout.loadKeyboardData(any(), any()) } returns ExceptionWrapperError(
                 Exception("revoked")
             ).left()
@@ -291,8 +301,8 @@ class AvailableLayoutsSpec : WordSpec({
             val keyboardData = KeyboardData(characterSets = listOf(listOf(null)))
             every { staleUri.toCustomLayout() } returns customLayout
             every { previousUri.toCustomLayout() } returns previousLayout
-            every { customLayout.path } returns Uri.parse(staleUri)
-            every { previousLayout.path } returns Uri.parse(previousUri)
+            every { customLayout.path } returns testUri(staleUri)
+            every { previousLayout.path } returns testUri(previousUri)
             every { customLayout.loadKeyboardData(any(), any()) } returns ExceptionWrapperError(
                 Exception("revoked")
             ).left()
@@ -316,8 +326,8 @@ class AvailableLayoutsSpec : WordSpec({
             val defaultLayout = EmbeddedLayout("en")
             every { staleUri.toCustomLayout() } returns customLayout
             every { previousUri.toCustomLayout() } returns previousLayout
-            every { customLayout.path } returns Uri.parse(staleUri)
-            every { previousLayout.path } returns Uri.parse(previousUri)
+            every { customLayout.path } returns testUri(staleUri)
+            every { previousLayout.path } returns testUri(previousUri)
             every { customLayout.loadKeyboardData(any(), any()) } returns ExceptionWrapperError(
                 Exception("revoked")
             ).left()
@@ -340,7 +350,7 @@ class AvailableLayoutsSpec : WordSpec({
             val uri = "content://layouts/reload"
             val keyboardData = KeyboardData(characterSets = listOf(listOf(null)))
             every { uri.toCustomLayout() } returns customLayout
-            every { customLayout.path } returns Uri.parse(uri)
+            every { customLayout.path } returns testUri(uri)
             every { customLayout.loadKeyboardData(any(), any()) } returns keyboardData.right()
             historyValue = linkedSetOf(uri)
 

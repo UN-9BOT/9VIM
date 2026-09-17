@@ -31,6 +31,16 @@ import java.io.ByteArrayInputStream
 import java.io.InputStream
 import org.apache.commons.codec.digest.DigestUtils
 
+private fun testUri(value: String): Uri {
+    val uri = mockk<Uri>()
+    every { uri.toString() } returns value
+    every { uri.scheme } returns value.substringBefore("://", "").takeIf { value.contains("://") }
+    every { uri.lastPathSegment } returns value.substringAfterLast('/').takeIf {
+        it.isNotEmpty() && it != value
+    }
+    return uri
+}
+
 private class TrackingInputStream(bytes: ByteArray) : ByteArrayInputStream(bytes) {
     var closed = false
 
@@ -174,7 +184,7 @@ class LayoutSpec : FunSpec({
                 )
             }
             test("reads one closed snapshot for digest and parser") {
-                val uri = Uri.parse("content://layouts/snapshot")
+                val uri = testUri("content://layouts/snapshot")
                 val first = TrackingInputStream("first".toByteArray())
                 val second = TrackingInputStream("second".toByteArray())
                 val layout = spyk(CustomLayout(uri))
@@ -203,8 +213,8 @@ class LayoutSpec : FunSpec({
             }
 
             test("derives URI metadata after reading raw cached data") {
-                val first = spyk(CustomLayout(Uri.parse("file:///first.yaml")))
-                val second = spyk(CustomLayout(Uri.parse("file:///second.yaml")))
+                val first = spyk(CustomLayout(testUri("file:///first.yaml")))
+                val second = spyk(CustomLayout(testUri("file:///second.yaml")))
                 val keyboardData = KeyboardData(characterSets = listOf(listOf(null)))
                 val cached = mutableMapOf<String, KeyboardData>()
 
@@ -232,7 +242,7 @@ class LayoutSpec : FunSpec({
             }
 
             test("reparses changed bytes for the same URI") {
-                val layout = spyk(CustomLayout(Uri.parse("content://layouts/changed")))
+                val layout = spyk(CustomLayout(testUri("content://layouts/changed")))
                 val first = TrackingInputStream("first".toByteArray())
                 val second = TrackingInputStream("second".toByteArray())
                 val keyboardData = KeyboardData(characterSets = listOf(listOf(null)))
@@ -264,7 +274,7 @@ class LayoutSpec : FunSpec({
             }
 
             test("closes the snapshot when the parser returns a typed error") {
-                val uri = Uri.parse("content://layouts/parser-failure")
+                val uri = testUri("content://layouts/parser-failure")
                 val stream = TrackingInputStream("invalid".toByteArray())
                 val layout = spyk(CustomLayout(uri))
                 val error = ExceptionWrapperError(Exception("parser failure"))
