@@ -2,6 +2,7 @@ package inc.flide.vim8.ime.layout
 
 import android.content.Context
 import arrow.core.Either
+import arrow.core.None
 import arrow.core.flatMap
 import arrow.core.getOrNone
 import arrow.core.left
@@ -115,7 +116,7 @@ class AvailableLayouts(private val layoutLoader: LayoutLoader, private val conte
                 .getOrNone()
                 .filterNot { it.totalLayers == 0 }
         } else {
-            arrow.core.None
+            None
         }
 
         restored
