@@ -11,7 +11,7 @@ The roadmap stabilizes the existing Android IME before introducing persistent mu
 - Integer phases are planned milestone work.
 - Decimal phases are urgent insertions between planned phases.
 
-- [ ] **Phase 1: Stable Fork Baseline** - Establish a reproducible, tested reference build before feature work.
+- [x] **Phase 1: Stable Fork Baseline** - Establish a reproducible, tested reference build before feature work. (completed 2026-09-18)
 - [ ] **Phase 2: Multilingual Profiles and Settings** - Let users persistently configure embedded and custom language profiles.
 - [ ] **Phase 3: Reliable Language Switching and Context** - Switch languages from controls or gestures and restore them per app.
 - [ ] **Phase 4: Language-Scoped Suggestions** - Preserve the suggestion workflow while isolating dictionaries, history, and completion by language.
@@ -140,7 +140,7 @@ The roadmap stabilizes the existing Android IME before introducing persistent mu
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Stable Fork Baseline | 7/7 | In Progress|  |
+| 1. Stable Fork Baseline | 7/7 | Complete    | 2026-09-18 |
 | 2. Multilingual Profiles and Settings | 0/TBD | Not started | - |
 | 3. Reliable Language Switching and Context | 0/TBD | Not started | - |
 | 4. Language-Scoped Suggestions | 0/TBD | Not started | - |

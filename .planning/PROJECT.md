@@ -19,10 +19,10 @@ Users can type reliably in several languages with fast 8VIM gestures, without lo
 - ✓ Android IME lifecycle and gesture/XPad input engine exist in the upstream codebase.
 - ✓ Embedded and custom YAML layouts can be parsed and loaded.
 - ✓ Compose settings, `CustomKeycode`, three suggestion slots, local word-frequency storage, Text Replacement, tests, and CI provide the brownfield foundation.
+- ✓ Reproducible tagged fork baseline, custom-layout import/fallback behavior, and Enter/newline regression coverage — Phase 1.
 
 ### Active
 
-- [ ] Establish a reproducible, tested fork baseline.
 - [ ] Introduce persistent language profiles and safe migration from the single-layout state.
 - [ ] Let users configure embedded and custom languages, order, locale, and default.
 - [ ] Support ordinary and gesture-driven next/previous language switching.
@@ -79,4 +79,4 @@ No ADR-classified locked decisions were provided. The following implementation-b
 - Revisit this document when scope, compatibility constraints, or the active milestone changes.
 
 ---
-*Last updated: 2026-09-17 after initial document ingest and brownfield mapping*
+*Last updated: 2026-09-18 after Phase 1*

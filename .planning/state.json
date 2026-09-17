@@ -6,7 +6,7 @@
     {
       "number": "1",
       "name": "Stable Fork Baseline",
-      "status": "in_progress"
+      "status": "complete"
     },
     {
       "number": "2",
@@ -36,8 +36,8 @@
   ],
   "next": {
     "command": "/gsd:progress --next",
-    "label": "Advance to the next step (verify)",
-    "reason": "Phase 01 of 6 · 0% · ready to verify"
+    "label": "Advance to the next step (plan phase 2)",
+    "reason": "Phase 2 of 6 — needs a plan"
   },
-  "updated_at": "2026-09-17T20:53:48.714Z"
+  "updated_at": "2026-09-17T21:50:34.637Z"
 }
