@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 2
+open_count: 3
 waived_count: 0
 fixed_count: 0
-total_count: 2
-last_updated: 2026-09-17T10:36:43.642Z
+total_count: 3
+last_updated: 2026-09-17T10:47:59.699Z
 ---
 
 # Broken Windows Ledger
@@ -17,6 +17,7 @@ last_updated: 2026-09-17T10:36:43.642Z
 |----|-------|------|------|------|-------------|--------|--------|-------------|-------------|
 | 1 | 01 | unrun-verify | 8vim/src/test/kotlin/inc/flide/vim8/ime/layout/AvailableLayoutsSpec.kt | 179 | Targeted AvailableLayoutsSpec/LayoutSpec Gradle verification blocked before test discovery: Android SDK location is missing. | open |  | 2026-09-17T10:28:12.493Z |  |
 | 2 | 01 | unrun-verify | 8vim/src/test/kotlin/inc/flide/vim8/ime/keyboard/text/KeyboardManagerSpec.kt |  | Targeted KeyboardManagerSpec/EditorInstanceSpec Gradle verification blocked before test discovery: Android SDK location is missing. | open |  | 2026-09-17T10:36:43.642Z |  |
+| 3 | 01 | unrun-verify | 8vim/src/test/kotlin/inc/flide/vim8/app/settings/CustomLayoutImportAdapterSpec.kt | 29 | Targeted CustomLayoutImportAdapterSpec/AvailableLayoutsSpec/LayoutSpec Gradle verification blocked before test discovery: Android SDK location is missing. | open |  | 2026-09-17T10:47:59.699Z |  |
 
 ````json
 [
@@ -43,6 +44,19 @@ last_updated: 2026-09-17T10:36:43.642Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-09-17T10:36:43.642Z",
+    "resolved_at": null,
+    "milestone": null
+  },
+  {
+    "id": 3,
+    "kind": "unrun-verify",
+    "phase": "01",
+    "file": "8vim/src/test/kotlin/inc/flide/vim8/app/settings/CustomLayoutImportAdapterSpec.kt",
+    "line": 29,
+    "description": "Targeted CustomLayoutImportAdapterSpec/AvailableLayoutsSpec/LayoutSpec Gradle verification blocked before test discovery: Android SDK location is missing.",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-09-17T10:47:59.699Z",
     "resolved_at": null,
     "milestone": null
   }
