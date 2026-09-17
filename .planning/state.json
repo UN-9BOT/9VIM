@@ -6,7 +6,7 @@
     {
       "number": "1",
       "name": "Stable Fork Baseline",
-      "status": "pending"
+      "status": "in_progress"
     },
     {
       "number": "2",
@@ -39,5 +39,5 @@
     "label": "Advance to the next step",
     "reason": "Phase 01 of 6 · 0% · executing"
   },
-  "updated_at": "2026-09-17T09:58:20.319Z"
+  "updated_at": "2026-09-17T10:29:24.076Z"
 }

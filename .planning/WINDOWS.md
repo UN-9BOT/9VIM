@@ -1,0 +1,36 @@
+---
+schema_version: 1
+open_count: 1
+waived_count: 0
+fixed_count: 0
+total_count: 1
+last_updated: 2026-09-17T10:28:12.493Z
+---
+
+# Broken Windows Ledger
+
+> Cross-phase defect register. With `workflow.windows_enforce` enabled, `/gsd-ship` blocks while `open_count > 0`.
+> Waive with `gsd-tools windows waive <id> "<reason>"` (reason required).
+> Mark fixed with `gsd-tools windows fixed <id>`.
+
+| id | phase | kind | file | line | description | status | reason | recorded_at | resolved_at |
+|----|-------|------|------|------|-------------|--------|--------|-------------|-------------|
+| 1 | 01 | unrun-verify | 8vim/src/test/kotlin/inc/flide/vim8/ime/layout/AvailableLayoutsSpec.kt | 179 | Targeted AvailableLayoutsSpec/LayoutSpec Gradle verification blocked before test discovery: Android SDK location is missing. | open |  | 2026-09-17T10:28:12.493Z |  |
+
+````json
+[
+  {
+    "id": 1,
+    "kind": "unrun-verify",
+    "phase": "01",
+    "file": "8vim/src/test/kotlin/inc/flide/vim8/ime/layout/AvailableLayoutsSpec.kt",
+    "line": 179,
+    "description": "Targeted AvailableLayoutsSpec/LayoutSpec Gradle verification blocked before test discovery: Android SDK location is missing.",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-09-17T10:28:12.493Z",
+    "resolved_at": null,
+    "milestone": null
+  }
+]
+````
