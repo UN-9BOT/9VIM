@@ -25,6 +25,7 @@ import inc.flide.vim8.ime.layout.models.error.LayoutError
 import inc.flide.vim8.ime.layout.models.info
 import inc.flide.vim8.ime.layout.models.yaml.versions.common.name
 import inc.flide.vim8.lib.android.tryOrNull
+import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.util.Locale
 import org.apache.commons.codec.digest.DigestUtils
@@ -76,24 +77,51 @@ fun safeLoadKeyboardData(layoutLoader: LayoutLoader, context: Context): Keyboard
         .getOrNull()
 }
 
+private fun InputStream.readSnapshot(): Either<LayoutError, ByteArray> = try {
+    use { it.readBytes().right() }
+} catch (exception: Throwable) {
+    ExceptionWrapperError(exception).left()
+}
+
+private fun <T> Layout<T>.cacheKey(
+    snapshot: ByteArray,
+    context: Context
+): Either<LayoutError, String> = try {
+    when (this) {
+        is CustomLayout -> DigestUtils.md5Hex(snapshot).right()
+        else -> md5(context).toEither { ExceptionWrapperError(Exception("MD5")) }
+    }
+} catch (exception: Throwable) {
+    ExceptionWrapperError(exception).left()
+}
+
+private fun parseSnapshot(
+    snapshot: ByteArray,
+    layoutLoader: LayoutLoader
+): Either<LayoutError, KeyboardData> = try {
+    ByteArrayInputStream(snapshot).use { layoutLoader.loadKeyboardData(it) }
+} catch (exception: Throwable) {
+    ExceptionWrapperError(exception).left()
+}
+
 fun <T> Layout<T>.loadKeyboardData(
     layoutLoader: LayoutLoader,
     context: Context
-): Either<LayoutError, KeyboardData> = md5(context)
-    .toEither { ExceptionWrapperError(Exception("MD5")) }
-    .flatMap { md5 ->
-        val cache by context.cache()
-        cache.load(md5).fold({
-            inputStream(context)
-                .flatMap {
-                    layoutLoader.loadKeyboardData(it)
-                }
-                .map {
-                    KeyboardData.info.name.modify(it) { name ->
-                        name.ifEmpty { defaultName(context) }
-                    }
-                }.onRight { cache.add(md5, it) }
-        }, { it.right() })
+): Either<LayoutError, KeyboardData> = inputStream(context)
+    .flatMap { it.readSnapshot() }
+    .flatMap { snapshot ->
+        cacheKey(snapshot, context).flatMap { cacheKey ->
+            val cache by context.cache()
+            cache.load(cacheKey).fold({
+                parseSnapshot(snapshot, layoutLoader)
+                    .onRight { cache.add(cacheKey, it) }
+            }, { it.right() })
+        }
+    }
+    .map { keyboardData ->
+        KeyboardData.info.name.modify(keyboardData) { name ->
+            name.ifEmpty { defaultName(context) }
+        }
     }
 
 fun String.toCustomLayout(): CustomLayout {
@@ -161,9 +189,13 @@ data class CustomLayout(override val path: Uri) : Layout<Uri> {
         context.contentResolver.openInputStream(path)!!.right()
     }) { e: Throwable -> ExceptionWrapperError(e).left() }
 
-    override fun md5(context: Context): Option<String> = inputStream(context)
-        .getOrNone()
-        .map { DigestUtils.md5Hex(it) }
+    override fun md5(context: Context): Option<String> = try {
+        inputStream(context)
+            .getOrNone()
+            .map { stream -> stream.use { DigestUtils.md5Hex(it) } }
+    } catch (_: Throwable) {
+        none()
+    }
 
     override fun defaultName(context: Context): String = Option.catch {
         Option.fromNullable(path.scheme)
