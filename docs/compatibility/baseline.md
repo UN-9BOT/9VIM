@@ -35,8 +35,8 @@ SHA proof is a blocking Plan 06 checkpoint and is not implied by this ledger.
 
 ## Pre-proof environment boundary
 
-The original host preflight observed Java `26` and no Android SDK Platform 36
-or Build Tools `36.0.0`. That is a host-tooling limitation, not a project
+The original host preflight observed Java 26 and no Android SDK API 36
+Platform or Build Tools `36.0.0`. That is a host-tooling limitation, not a project
 result: the canonical command must only be evaluated with the manifest-matched
 Java 17/Android SDK environment. A pinned Docker environment may supply that
 toolchain, but its output still has to be matched to the exact committed SHA
