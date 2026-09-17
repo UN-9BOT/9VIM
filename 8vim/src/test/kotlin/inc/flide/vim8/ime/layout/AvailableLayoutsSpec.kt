@@ -13,6 +13,8 @@ import inc.flide.vim8.ime.layout.models.KeyboardData
 import inc.flide.vim8.ime.layout.models.error.ExceptionWrapperError
 import inc.flide.vim8.ime.layout.models.info
 import inc.flide.vim8.ime.layout.models.yaml.versions.common.name
+import io.kotest.assertions.arrow.core.shouldBeRight
+import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.core.spec.style.WordSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
@@ -31,8 +33,12 @@ import kotlin.random.Random
 
 class AvailableLayoutsSpec : WordSpec({
     lateinit var currentLayout: PreferenceData<Layout<*>>
+    lateinit var previousValidLayout: PreferenceData<Layout<*>>
     lateinit var historyData: PreferenceData<Set<String>>
     lateinit var customLayout: CustomLayout
+    var currentValue: Layout<*> = EmbeddedLayout("en")
+    var previousValidValue: Layout<*> = EmbeddedLayout("en")
+    var historyValue: Set<String> = emptySet()
 
     val layoutLoader = mockk<LayoutLoader>(relaxed = true)
     val context = mockk<Context>()
@@ -60,6 +66,7 @@ class AvailableLayoutsSpec : WordSpec({
             mockk {
                 every { layout } returns mockk {
                     every { current } answers { currentLayout }
+                    every { previousValid } answers { previousValidLayout }
                     every { custom } returns mockk {
                         every { history } answers { historyData }
                     }
@@ -71,12 +78,23 @@ class AvailableLayoutsSpec : WordSpec({
 
     beforeTest {
         customLayout = mockkClass(CustomLayout::class)
+        every { customLayout.path } returns Uri.parse("uri")
+        currentValue = embeddedLayouts.first().first
         currentLayout = mockk(relaxed = true) {
             every { default } returns embeddedLayouts.first().first
-            every { get() } returns embeddedLayouts.first().first
+            every { get() } answers { currentValue }
+            every { set(any(), any()) } answers { currentValue = firstArg() }
         }
+        previousValidValue = embeddedLayouts.first().first
+        previousValidLayout = mockk(relaxed = true) {
+            every { default } returns embeddedLayouts.first().first
+            every { get() } answers { previousValidValue }
+            every { set(any(), any()) } answers { previousValidValue = firstArg() }
+        }
+        historyValue = emptySet()
         historyData = mockk(relaxed = true) {
-            every { get() } returns emptySet()
+            every { get() } answers { historyValue }
+            every { set(any(), any()) } answers { historyValue = firstArg() }
         }
     }
 
@@ -160,7 +178,7 @@ class AvailableLayoutsSpec : WordSpec({
     "Import a custom layout" should {
         "validate before adding a new URI and activate it" {
             val uri = "content://layouts/new"
-            val keyboardData = arbKeyboardData.next()
+            val keyboardData = KeyboardData(characterSets = listOf(listOf(null)))
             every { uri.toCustomLayout() } returns customLayout
             every { customLayout.path } returns Uri.parse(uri)
             every { customLayout.loadKeyboardData(any(), any()) } returns keyboardData.right()
@@ -168,9 +186,72 @@ class AvailableLayoutsSpec : WordSpec({
 
             val availableLayouts = AvailableLayouts(layoutLoader, context)
 
-            availableLayouts.updateKeyboardData(customLayout) shouldBe true
+            availableLayouts.importLayout(customLayout).shouldBeRight(customLayout)
             verify { historyData.set(match { it == linkedSetOf(uri) }) }
             verify { currentLayout.set(customLayout) }
+            historyValue shouldBe linkedSetOf(uri)
+            currentValue shouldBe customLayout
+        }
+
+        "reuse a same-URI entry without replacing the previous valid identity" {
+            val uri = "content://layouts/reused"
+            val keyboardData = KeyboardData(characterSets = listOf(listOf(null)))
+            every { uri.toCustomLayout() } returns customLayout
+            every { customLayout.path } returns Uri.parse(uri)
+            every { customLayout.loadKeyboardData(any(), any()) } returns keyboardData.right()
+            historyValue = linkedSetOf(uri)
+            every { historyData.get() } answers { historyValue }
+            currentValue = customLayout
+            previousValidValue = embeddedLayouts.first().first
+
+            val availableLayouts = AvailableLayouts(layoutLoader, context)
+            availableLayouts.importLayout(customLayout).shouldBeRight(customLayout)
+
+            historyValue shouldBe linkedSetOf(uri)
+            currentValue shouldBe customLayout
+            previousValidValue shouldBe embeddedLayouts.first().first
+            verify(exactly = 0) { previousValidLayout.set(customLayout) }
+            availableLayouts.displayNames.size shouldBe embeddedLayouts.size + 1
+        }
+
+        "keep same-content URIs as distinct available entries" {
+            val firstUri = "content://layouts/first"
+            val secondUri = "content://layouts/second"
+            val keyboardData = KeyboardData(characterSets = listOf(listOf(null)))
+            val secondLayout = mockkClass(CustomLayout::class)
+            every { firstUri.toCustomLayout() } returns customLayout
+            every { secondUri.toCustomLayout() } returns secondLayout
+            every { customLayout.path } returns Uri.parse(firstUri)
+            every { secondLayout.path } returns Uri.parse(secondUri)
+            every { customLayout.loadKeyboardData(any(), any()) } returns keyboardData.right()
+            every { secondLayout.loadKeyboardData(any(), any()) } returns keyboardData.right()
+            historyValue = linkedSetOf(firstUri, secondUri)
+            every { historyData.get() } answers { historyValue }
+            currentValue = customLayout
+
+            val availableLayouts = AvailableLayouts(layoutLoader, context)
+
+            availableLayouts.displayNames.size shouldBe embeddedLayouts.size + 2
+            availableLayouts.importLayout(secondLayout).shouldBeRight(secondLayout)
+            historyValue shouldBe linkedSetOf(secondUri, firstUri)
+            currentValue shouldBe secondLayout
+        }
+
+        "reject a new invalid URI without mutating current or history" {
+            val uri = "content://layouts/invalid"
+            val error = ExceptionWrapperError(Exception("invalid"))
+            every { uri.toCustomLayout() } returns customLayout
+            every { customLayout.path } returns Uri.parse(uri)
+            every { customLayout.loadKeyboardData(any(), any()) } returns error.left()
+            historyValue = emptySet()
+            currentValue = embeddedLayouts.first().first
+
+            val availableLayouts = AvailableLayouts(layoutLoader, context)
+            availableLayouts.importLayout(customLayout).shouldBeLeft(error)
+
+            historyValue shouldBe emptySet()
+            currentValue shouldBe embeddedLayouts.first().first
+            verify(exactly = 0) { currentLayout.set(customLayout) }
         }
 
         "leave current layout unchanged when an inactive URI becomes stale" {

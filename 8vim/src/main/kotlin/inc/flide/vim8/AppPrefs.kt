@@ -64,6 +64,12 @@ class AppPrefs : PreferenceModel(9) {
             serde = LayoutSerDe
         )
 
+        val previousValid = custom(
+            key = "prefs_layout_previous_valid",
+            default = EmbeddedLayout("en"),
+            serde = LayoutSerDe
+        )
+
         inner class Custom {
             val history = stringSet(
                 key = "prefs_layout_custom_history",

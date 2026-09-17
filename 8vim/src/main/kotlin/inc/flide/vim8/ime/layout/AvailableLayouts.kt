@@ -1,11 +1,15 @@
 package inc.flide.vim8.ime.layout
 
 import android.content.Context
-import arrow.core.elementAtOrNone
-import arrow.core.firstOrNone
+import arrow.core.Either
 import arrow.core.getOrNone
+import arrow.core.left
+import arrow.core.right
 import inc.flide.vim8.AppPrefs
 import inc.flide.vim8.appPreferenceModel
+import inc.flide.vim8.ime.layout.models.KeyboardData
+import inc.flide.vim8.ime.layout.models.error.ExceptionWrapperError
+import inc.flide.vim8.ime.layout.models.error.LayoutError
 
 class AvailableLayouts(private val layoutLoader: LayoutLoader, private val context: Context) {
     private val prefs: AppPrefs by appPreferenceModel()
@@ -33,19 +37,97 @@ class AvailableLayouts(private val layoutLoader: LayoutLoader, private val conte
         }
     }
 
-    private fun removeFromHistory(path: String) {
+    private fun sameIdentity(left: Layout<*>, right: Layout<*>): Boolean = when {
+        left is EmbeddedLayout && right is EmbeddedLayout -> left.path == right.path
+        left is CustomLayout && right is CustomLayout ->
+            left.path.toString() == right.path.toString()
+
+        else -> false
+    }
+
+    private fun isCustomPath(layout: Layout<*>, path: String): Boolean =
+        layout is CustomLayout && layout.path.toString() == path
+
+    private fun hasLayout(layout: Layout<*>): Boolean =
+        layoutsWithKeyboardData.keys.any { sameIdentity(it, layout) }
+
+    private fun removeCustomLayout(path: String) {
+        layoutsWithKeyboardData
+            .keys
+            .filter { isCustomPath(it, path) }
+            .toList()
+            .forEach { layoutsWithKeyboardData.remove(it) }
+
         val historyPref = prefs.layout.custom.history
         val history = LinkedHashSet(historyPref.get())
-        history.remove(path)
-        historyPref.set(history)
-        prefs.layout.current.reset()
-        layoutsWithKeyboardData
-            .toList()
-            .firstOrNone { (layout, _) -> layout.path.toString() == path }
-            .onSome { (layout, _) ->
-                layoutsWithKeyboardData.remove(layout)
-            }
+        if (history.remove(path)) {
+            historyPref.set(history)
+        }
+
+        if (isCustomPath(prefs.layout.previousValid.get(), path)) {
+            prefs.layout.previousValid.set(prefs.layout.previousValid.default)
+        }
+    }
+
+    private fun removeStaleLayout(path: String) {
+        val current = prefs.layout.current.get()
+        removeCustomLayout(path)
+        if (isCustomPath(current, path)) {
+            restorePreviousValidOrDefault()
+        }
         findIndex()
+    }
+
+    private fun rememberPreviousValid(current: Layout<*>, next: Layout<*>) {
+        if (!sameIdentity(current, next) && hasLayout(current)) {
+            prefs.layout.previousValid.set(current)
+        }
+    }
+
+    private fun updateHistory(path: String) {
+        val history = LinkedHashSet(prefs.layout.custom.history.get())
+        history.remove(path)
+        prefs.layout.custom.history.set(LinkedHashSet<String>().apply {
+            add(path)
+            addAll(history)
+        })
+    }
+
+    private fun upsert(layout: Layout<*>, keyboardData: KeyboardData) {
+        layoutsWithKeyboardData
+            .keys
+            .filter { sameIdentity(it, layout) }
+            .toList()
+            .forEach { layoutsWithKeyboardData.remove(it) }
+        layoutsWithKeyboardData[layout] = keyboardData.toString()
+    }
+
+    private fun emptyLayoutError(): LayoutError = ExceptionWrapperError(
+        IllegalArgumentException("The layout requires at least one layer")
+    )
+
+    private fun restorePreviousValidOrDefault() {
+        val previous = prefs.layout.previousValid.get()
+        val restored = if (hasLayout(previous)) {
+            previous
+                .loadKeyboardData(layoutLoader, context)
+                .getOrNone()
+                .filterNot { it.totalLayers == 0 }
+        } else {
+            arrow.core.None
+        }
+
+        restored
+            .onSome { keyboardData ->
+                upsert(previous, keyboardData)
+                prefs.layout.current.set(previous)
+            }
+            .onNone {
+                if (previous is CustomLayout) {
+                    removeCustomLayout(previous.path.toString())
+                }
+                prefs.layout.current.set(prefs.layout.current.default)
+            }
     }
 
     fun reloadCustomLayouts() {
@@ -53,65 +135,132 @@ class AvailableLayouts(private val layoutLoader: LayoutLoader, private val conte
         findIndex()
     }
 
-    fun updateKeyboardData(layout: Layout<*>): Boolean {
-        return layoutsWithKeyboardData
-            .getOrNone(layout)
-            .flatMap { layout.loadKeyboardData(layoutLoader, context).getOrNone() }
-            .onSome {
+    /**
+     * Validates and imports a custom URI as one state transition.
+     *
+     * URI strings are the durable identity; content digests are only used by
+     * [Layout.loadKeyboardData] as a cache key.
+     */
+    fun importLayout(layout: CustomLayout): Either<LayoutError, Layout<*>> {
+        val path = layout.path.toString()
+        val knownLayout = prefs.layout.custom.history.get().contains(path) || hasLayout(layout)
+        return layout.loadKeyboardData(layoutLoader, context).flatMap { keyboardData ->
+            if (keyboardData.totalLayers == 0) {
+                emptyLayoutError().left()
+            } else {
+                val current = prefs.layout.current.get()
+                upsert(layout, keyboardData)
+                updateHistory(path)
+                rememberPreviousValid(current, layout)
                 prefs.layout.current.set(layout)
+                findIndex()
+                layout.right()
             }
-            .isSome()
+        }.onLeft {
+            if (knownLayout) {
+                removeStaleLayout(path)
+            }
+        }
+    }
+
+    /**
+     * Compatibility wrapper for the old picker call site. New integrations
+     * should consume [importLayout] so they can display the typed failure.
+     */
+    fun updateKeyboardData(layout: Layout<*>): Boolean {
+        return if (layout is CustomLayout) {
+            importLayout(layout).fold({ false }, { true })
+        } else {
+            layout.loadKeyboardData(layoutLoader, context)
+                .flatMap { keyboardData ->
+                    if (keyboardData.totalLayers == 0) {
+                        emptyLayoutError().left()
+                    } else {
+                        val current = prefs.layout.current.get()
+                        upsert(layout, keyboardData)
+                        rememberPreviousValid(current, layout)
+                        prefs.layout.current.set(layout)
+                        findIndex()
+                        layout.right()
+                    }
+                }
+                .fold({ false }, { true })
+        }
     }
 
     fun selectLayout(which: Int) {
-        layoutsWithKeyboardData.keys.elementAtOrNone(which)
-            .onSome { layout ->
-                layout
-                    .loadKeyboardData(layoutLoader, context)
-                    .getOrNone()
-                    .onNone { removeFromHistory(layout.path.toString()) }
-                    .onSome {
-                        prefs.layout.current.set(layout)
-                        index = which
-                    }
-                    .onNone {
-                        prefs.layout.current.reset()
-                    }
+        val layout = layoutsWithKeyboardData.keys.elementAtOrNull(which) ?: return
+        layout.loadKeyboardData(layoutLoader, context)
+            .flatMap { keyboardData ->
+                if (keyboardData.totalLayers == 0) {
+                    emptyLayoutError().left()
+                } else {
+                    val current = prefs.layout.current.get()
+                    upsert(layout, keyboardData)
+                    rememberPreviousValid(current, layout)
+                    prefs.layout.current.set(layout)
+                    layout.right()
+                }
             }
+            .onLeft {
+                if (layout is CustomLayout) {
+                    removeStaleLayout(layout.path.toString())
+                }
+            }
+            .onRight { findIndex() }
     }
 
     private fun listCustomLayoutHistory() {
         val uris = LinkedHashSet(prefs.layout.custom.history.get())
-        val customLayouts = layoutsWithKeyboardData
+        val current = prefs.layout.current.get()
+        val customLayouts = layoutsWithKeyboardData.keys
+            .filterIsInstance<CustomLayout>()
             .toList()
-            .filter { it.first is CustomLayout }
-            .toMap()
-
         customLayouts
-            .filter { !uris.contains(it.key.toString()) }
-            .forEach { (layout, _) -> layoutsWithKeyboardData.remove(layout) }
+            .filter { customLayout -> !uris.contains(customLayout.path.toString()) }
+            .forEach { layoutsWithKeyboardData.remove(it) }
 
-        uris.toList().flatMap { customLayoutUriString ->
-            val layout = customLayoutUriString.toCustomLayout()
-            if (customLayouts.containsKey(layout)) {
-                emptyList()
+        val loaded = uris.mapNotNull { path ->
+            val layout = path.toCustomLayout()
+            layout.loadKeyboardData(layoutLoader, context)
+                .getOrNone()
+                .filterNot { it.totalLayers == 0 }
+                .map { layout to it }
+                .getOrNull()
+        }
+        val validUris = loaded.map { it.first.path.toString() }.toSet()
+        val staleUris = uris - validUris
+
+        layoutsWithKeyboardData.keys
+            .filterIsInstance<CustomLayout>()
+            .toList()
+            .forEach { layoutsWithKeyboardData.remove(it) }
+        loaded.forEach { (layout, keyboardData) -> upsert(layout, keyboardData) }
+        prefs.layout.custom.history.set(
+            LinkedHashSet(uris.filter { validUris.contains(it) })
+        )
+
+        staleUris.forEach { path ->
+            if (isCustomPath(current, path)) {
+                removeStaleLayout(path)
             } else {
-                layout.loadKeyboardData(layoutLoader, context)
-                    .getOrNone()
-                    .filterNot { it.totalLayers == 0 }
-                    .map { layout to it.toString() }
-                    .onNone { uris.remove(customLayoutUriString) }
-                    .toList()
+                removeCustomLayout(path)
             }
-        }.let { layoutsWithKeyboardData.putAll(it) }
-        prefs.layout.custom.history.set(uris)
+        }
+        if (current is CustomLayout && !validUris.contains(current.path.toString())) {
+            removeStaleLayout(current.path.toString())
+        }
     }
 
     private fun findIndex() {
-        index = layoutsWithKeyboardData.keys.indexOf(prefs.layout.current.get())
+        val current = prefs.layout.current.get()
+        index = layoutsWithKeyboardData.keys.indexOfFirst { sameIdentity(it, current) }
         if (index == -1) {
             index = defaultIndex
-            prefs.layout.current.reset()
+            val defaultLayout = prefs.layout.current.default
+            if (!sameIdentity(current, defaultLayout)) {
+                prefs.layout.current.set(defaultLayout)
+            }
         }
     }
 }
