@@ -1,0 +1,12 @@
+{
+  "source_path": "/home/unbot/code/opensource/9VIM/docs/prd/8vim_fork_implementation_brief_ru.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "8VIM Fork — план развития multilingual keyboard и smart text",
+  "summary": "План развития форка 8VIM в многоязычную клавиатуру с переключением языков, раскладками, подсказками и исправлением опечаток.",
+  "scope": ["8VIM", "multilingual keyboard", "language profiles", "layouts", "language switching", "autocomplete", "autocorrect", "smart text"],
+  "cross_refs": ["https://github.com/8VIM/8VIM/blob/master/8vim/src/main/kotlin/inc/flide/vim8/AppPrefs.kt", "https://github.com/8VIM/8VIM/blob/master/8vim/src/main/kotlin/inc/flide/vim8/ime/layout/Layout.kt", "https://github.com/8VIM/8VIM/blob/master/8vim/src/main/kotlin/inc/flide/vim8/ime/layout/AvailableLayouts.kt", "https://github.com/8VIM/8VIM/blob/master/8vim/src/main/kotlin/inc/flide/vim8/Vim8ImeService.kt", "https://github.com/8VIM/8VIM/blob/master/8vim/src/main/kotlin/inc/flide/vim8/ime/editor/EditorInstance.kt", "https://github.com/8VIM/8VIM/blob/master/8vim/src/main/kotlin/inc/flide/vim8/ime/keyboard/text/KeyboardManager.kt", "https://github.com/8VIM/8VIM/blob/master/8vim/src/main/kotlin/inc/flide/vim8/ime/layout/models/CustomKeycode.kt", "https://github.com/8VIM/8VIM/blob/master/8vim/src/main/kotlin/inc/flide/vim8/ime/nlp/SuggestionsManager.kt", "https://github.com/8VIM/8VIM/blob/master/8vim/src/main/kotlin/inc/flide/vim8/ime/nlp/WordFrequencyRepository.kt", "https://github.com/8VIM/8VIM/blob/master/8vim/src/main/kotlin/inc/flide/vim8/ime/layout/models/LayerLevel.kt", "https://github.com/8VIM/8VIM/pull/614", "https://github.com/8VIM/8VIM/pull/604", "https://github.com/8VIM/8VIM/pull/622", "https://github.com/8VIM/8VIM/pull/553", "https://github.com/8VIM/8VIM/issues/568", "https://github.com/8VIM/8VIM/issues/308", "https://github.com/8VIM/8VIM/issues/437", "https://github.com/8VIM/8VIM/pull/594", "https://github.com/8VIM/8VIM/pull/626", "https://github.com/8VIM/8VIM/pull/363", "https://github.com/8VIM/8VIM/pull/530"],
+  "locked": false,
+  "precedence": null
+}
