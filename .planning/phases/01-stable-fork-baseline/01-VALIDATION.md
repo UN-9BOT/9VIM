@@ -38,10 +38,13 @@ created: "2026-09-17"
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 01-01 | 01 | 1 | REQ-stable-fork-baseline | T-01 / — | Toolchain mismatch fails before build | shell/CI | `./scripts/baseline-check.sh` | ❌ W0 | ⬜ pending |
-| 01-02 | 01 | 1 | REQ-stable-fork-baseline | T-02 / T-03 | Invalid URI cannot mutate current/history; no arbitrary fallback | unit | targeted JVM command | ❌ W0 | ⬜ pending |
-| 01-03 | 01 | 1 | REQ-stable-fork-baseline | — | `IME_FLAG_NO_ENTER_ACTION` takes precedence over editor action | unit | targeted JVM command | ❌ W0 | ⬜ pending |
-| 01-04 | 02 | 2 | REQ-stable-fork-baseline | T-04 / — | Only reviewed upstream behavior is adopted and tag points to verified commit | shell/manual | `git show-ref --verify refs/tags/<baseline-tag>` | ❌ W0 | ⬜ pending |
+| 01-01-01 | 01 | 1 | REQ-stable-fork-baseline | T-01-CI / T-01-TOOLCHAIN | Toolchain mismatch fails before build; every PR runs the canonical command | shell/CI | `./scripts/baseline-check.sh` | ❌ W0 | ⬜ pending |
+| 01-02-01..03 | 02 | 1 | REQ-stable-fork-baseline | T-02-PROVIDER / T-02-INPUT / T-02-HASH / T-02-RACE | Invalid URI cannot mutate current/history; stale fallback is explicit; URI identity is separate from MD5 | unit | targeted JVM command | ❌ W0 | ⬜ pending |
+| 01-03-01 | 03 | 1 | REQ-stable-fork-baseline | T-03-ROUTE | `IME_FLAG_NO_ENTER_ACTION` takes precedence over editor action | unit | targeted JVM command | ❌ W0 | ⬜ pending |
+| 01-04-01..02 | 04 | 2 | REQ-stable-fork-baseline | T-04-URI / T-04-EVIDENCE | Tested SAF adapter drives the validated transaction; baseline picker and disposable #622 candidate receive device evidence | unit/manual | `CustomLayoutImportAdapterSpec` + targeted JVM command + picker/candidate smoke | ❌ W0 | ⬜ pending |
+| 01-05-01..02 | 05 | 3 | REQ-stable-fork-baseline | T-05-GATE / T-05-GESTURE | Only reviewed #622 behavior is adopted; omission leaves optional files unchanged | conditional unit/manual | `KeyboardControllerSpec` or clean optional diff | ❌ W0 | ⬜ pending |
+| 01-06-01..02 | 06 | 4 | REQ-stable-fork-baseline | T-06-PROOF / T-06-TAG | Final proof selects a valid local-toolchain or exact-SHA GitHub-CI branch and confirms tag absence | shell/CI/manual | `./scripts/baseline-check.sh` or exact-SHA mandatory CI job + local/remote absence checks | ❌ W0 | ⬜ pending |
+| 01-07-01..02 | 07 | 5 | REQ-stable-fork-baseline | T-07-SHA / T-07-REF | Annotated tag targets approved SHA and origin peeled target is immutable evidence | git/remote | local annotated-tag checks + `git ls-remote --tags origin` | ❌ W0 | ⬜ pending |
 
 ---
 

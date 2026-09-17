@@ -479,23 +479,25 @@ remain pinned; historical dependency PRs are explicitly excluded.
 | A2 | Failed new URI import is non-mutating; failed refresh of an already-persisted URI prunes it and applies active-aware fallback | D-08/D-09 overlap could be interpreted differently | Encode this precedence in named tests and compatibility note |
 | A3 | `build-tools;36.0.0` is the intended AGP 9.1 default | Runner image/tooling could select a newer compatible 36.x | Pin manifest and CI provisioning explicitly |
 
-## Open Questions for Planning
+## Planning Resolutions
 
-1. **Preference shape for previous-valid layout**
-   - Recommendation: one serialized `Layout<*>` identity with default embedded
-     `en`, updated only on successful identity changes.
-   - Constraint: keep it internal enough that Phase 2 can migrate into
-     `LanguageProfile` state without maintaining two authorities.
+1. **RESOLVED — Preference shape for previous-valid layout**
+   - Decision: use one narrowly scoped serialized `Layout<*>` identity beside
+     `current`, default embedded `en`, updated only after successful identity
+     changes and not during same-URI refresh.
+   - Phase 2 must absorb/remove it when `LanguageProfile` becomes authoritative;
+     Phase 1 does not create a second public layout authority.
 
-2. **Optional #622 scheduling**
-   - Recommendation: put it in a final isolated plan/checkpoint after mandatory
-     baseline work. A “device unavailable → documented omission” branch must
-     still let Phase 1 finish.
+2. **RESOLVED — Optional #622 scheduling**
+   - Decision: build the isolated #622 candidate only in a disposable
+     worktree/branch, run the current-device smoke before baseline adoption,
+     then either port the isolated change after `adopt` evidence or discard the
+     candidate and record `omit-unavailable`/`omit-failed`.
 
-3. **Baseline tag spelling**
-   - Recommendation: an annotated, fork-specific name such as
-     `fork-baseline-v0.18.0-rc.1`; verify it does not already exist immediately
-     before creation and record the target SHA.
+3. **RESOLVED — Baseline tag spelling**
+   - Decision: create the single annotated tag
+     `fork-baseline-v0.18.0-rc.1` only after exact-SHA local or GitHub-CI proof,
+     after verifying the name is absent both locally and on `origin`.
 
 ## Sources
 
