@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: 01
 current_phase_name: Stable Fork Baseline
 status: executing
-stopped_at: Completed 01-04-PLAN.md
-last_updated: "2026-09-17T16:48:15.807Z"
+stopped_at: Completed 01-05-PLAN.md
+last_updated: "2026-09-17T17:26:04.083Z"
 last_activity: 2026-09-17
 last_activity_desc: Phase 01 execution started
-state_head: 0358d9ae1f2dc7ec415b6014e1ee1b8b7a66fb00
+state_head: aa9be2719227ed7dedfa81302c20458e383e70e4
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 7
-  completed_plans: 4
+  completed_plans: 5
   percent: 0
 ---
 
@@ -28,7 +28,7 @@ See: `.planning/PROJECT.md` (updated 2026-09-17)
 ## Current Position
 
 Phase: 01 (Stable Fork Baseline) — EXECUTING
-Plan: 5 of 7
+Plan: 6 of 7
 Status: Ready to execute
 Last activity: 2026-09-17 — Phase 01 execution started
 
@@ -62,6 +62,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01 P02 | 21min | 3 tasks | 5 files |
 | Phase 01 P03 | 8min | 2 tasks | 2 files |
 | Phase 01 P04 | 6h 11m | 2 tasks | 3 files |
+| Phase 01 P05 | 7min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -78,6 +79,9 @@ Decisions are logged in `PROJECT.md`. No ADR-classified locked decisions were in
 - [Phase 01]: Phase 01 Plan 03: Enter/newline evidence remains JVM-only; device/app compatibility is deferred and not claimed.
 - [Phase 01]: Phase 01 Plan 04: baseline SAF picker passed on V2425A/API 36; same-URI reimport did not duplicate and invalid/zero-layer imports left current layout unchanged.
 - [Phase 01]: Phase 01 Plan 04: #622 intentionally omitted by user (#622=omit-unavailable); no candidate or adoption evidence and no runtime changes.
+- [Phase 01]: #622 intentionally omitted because the user chose skip; the omission is not a claim that the device was unavailable.
+- [Phase 01]: Final CI URL/SHA and immutable tag target remain reserved for Plan 06.
+- [Phase 01]: #553, historical Dependabot changes, version rollback, and dependency modernization remain excluded from the baseline.
 
 ### Pending Todos
 
@@ -98,6 +102,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-17T16:48:15.765Z
-Stopped at: Completed 01-04-PLAN.md
+Last session: 2026-09-17T17:26:04.050Z
+Stopped at: Completed 01-05-PLAN.md
 Resume file: None

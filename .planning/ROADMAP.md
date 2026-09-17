@@ -45,7 +45,7 @@ The roadmap stabilizes the existing Android IME before introducing persistent mu
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 01-05-PLAN.md
+- [x] 01-05-PLAN.md
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
@@ -140,7 +140,7 @@ The roadmap stabilizes the existing Android IME before introducing persistent mu
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Stable Fork Baseline | 4/7 | In Progress|  |
+| 1. Stable Fork Baseline | 5/7 | In Progress|  |
 | 2. Multilingual Profiles and Settings | 0/TBD | Not started | - |
 | 3. Reliable Language Switching and Context | 0/TBD | Not started | - |
 | 4. Language-Scoped Suggestions | 0/TBD | Not started | - |
