@@ -4,6 +4,8 @@
 /.idea/workspace.xml
 /.idea/libraries
 .idea/
+# Local Codex/GSD runtime; install per workspace, do not version generated agents.
+.codex/
 .DS_Store
 /build
 /captures
