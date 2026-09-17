@@ -269,4 +269,75 @@ class AvailableLayoutsSpec : WordSpec({
             verify(exactly = 0) { currentLayout.reset() }
         }
     }
+
+    "Prune stale custom layouts" should {
+        "restore the persisted previous valid layout when the active URI fails" {
+            val staleUri = "content://layouts/stale-active"
+            val previousUri = "content://layouts/previous"
+            val previousLayout = mockkClass(CustomLayout::class)
+            val keyboardData = KeyboardData(characterSets = listOf(listOf(null)))
+            every { staleUri.toCustomLayout() } returns customLayout
+            every { previousUri.toCustomLayout() } returns previousLayout
+            every { customLayout.path } returns Uri.parse(staleUri)
+            every { previousLayout.path } returns Uri.parse(previousUri)
+            every { customLayout.loadKeyboardData(any(), any()) } returns ExceptionWrapperError(
+                Exception("revoked")
+            ).left()
+            every { previousLayout.loadKeyboardData(any(), any()) } returns keyboardData.right()
+            historyValue = linkedSetOf(staleUri, previousUri)
+            currentValue = customLayout
+            previousValidValue = previousLayout
+
+            val availableLayouts = AvailableLayouts(layoutLoader, context)
+
+            historyValue shouldBe linkedSetOf(previousUri)
+            currentValue shouldBe previousLayout
+            verify { currentLayout.set(previousLayout) }
+            availableLayouts.displayNames.size shouldBe embeddedLayouts.size + 1
+        }
+
+        "use embedded en when the persisted previous layout is broken" {
+            val staleUri = "content://layouts/stale-active"
+            val previousUri = "content://layouts/previous-broken"
+            val previousLayout = mockkClass(CustomLayout::class)
+            val defaultLayout = EmbeddedLayout("en")
+            every { staleUri.toCustomLayout() } returns customLayout
+            every { previousUri.toCustomLayout() } returns previousLayout
+            every { customLayout.path } returns Uri.parse(staleUri)
+            every { previousLayout.path } returns Uri.parse(previousUri)
+            every { customLayout.loadKeyboardData(any(), any()) } returns ExceptionWrapperError(
+                Exception("revoked")
+            ).left()
+            every { previousLayout.loadKeyboardData(any(), any()) } returns ExceptionWrapperError(
+                Exception("also revoked")
+            ).left()
+            every { currentLayout.default } returns defaultLayout
+            historyValue = linkedSetOf(staleUri, previousUri)
+            currentValue = customLayout
+            previousValidValue = previousLayout
+
+            AvailableLayouts(layoutLoader, context)
+
+            historyValue shouldBe emptySet()
+            currentValue shouldBe defaultLayout
+            verify { currentLayout.set(defaultLayout) }
+        }
+
+        "retain a valid URI entry across repeated reloads" {
+            val uri = "content://layouts/reload"
+            val keyboardData = KeyboardData(characterSets = listOf(listOf(null)))
+            every { uri.toCustomLayout() } returns customLayout
+            every { customLayout.path } returns Uri.parse(uri)
+            every { customLayout.loadKeyboardData(any(), any()) } returns keyboardData.right()
+            historyValue = linkedSetOf(uri)
+
+            val availableLayouts = AvailableLayouts(layoutLoader, context)
+            val initialSize = availableLayouts.displayNames.size
+
+            availableLayouts.reloadCustomLayouts()
+
+            availableLayouts.displayNames.size shouldBe initialSize
+            historyValue shouldBe linkedSetOf(uri)
+        }
+    }
 })
