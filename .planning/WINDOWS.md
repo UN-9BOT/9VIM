@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 1
+open_count: 2
 waived_count: 0
 fixed_count: 0
-total_count: 1
-last_updated: 2026-09-17T10:28:12.493Z
+total_count: 2
+last_updated: 2026-09-17T10:36:43.642Z
 ---
 
 # Broken Windows Ledger
@@ -16,6 +16,7 @@ last_updated: 2026-09-17T10:28:12.493Z
 | id | phase | kind | file | line | description | status | reason | recorded_at | resolved_at |
 |----|-------|------|------|------|-------------|--------|--------|-------------|-------------|
 | 1 | 01 | unrun-verify | 8vim/src/test/kotlin/inc/flide/vim8/ime/layout/AvailableLayoutsSpec.kt | 179 | Targeted AvailableLayoutsSpec/LayoutSpec Gradle verification blocked before test discovery: Android SDK location is missing. | open |  | 2026-09-17T10:28:12.493Z |  |
+| 2 | 01 | unrun-verify | 8vim/src/test/kotlin/inc/flide/vim8/ime/keyboard/text/KeyboardManagerSpec.kt |  | Targeted KeyboardManagerSpec/EditorInstanceSpec Gradle verification blocked before test discovery: Android SDK location is missing. | open |  | 2026-09-17T10:36:43.642Z |  |
 
 ````json
 [
@@ -29,6 +30,19 @@ last_updated: 2026-09-17T10:28:12.493Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-09-17T10:28:12.493Z",
+    "resolved_at": null,
+    "milestone": null
+  },
+  {
+    "id": 2,
+    "kind": "unrun-verify",
+    "phase": "01",
+    "file": "8vim/src/test/kotlin/inc/flide/vim8/ime/keyboard/text/KeyboardManagerSpec.kt",
+    "line": null,
+    "description": "Targeted KeyboardManagerSpec/EditorInstanceSpec Gradle verification blocked before test discovery: Android SDK location is missing.",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-09-17T10:36:43.642Z",
     "resolved_at": null,
     "milestone": null
   }
