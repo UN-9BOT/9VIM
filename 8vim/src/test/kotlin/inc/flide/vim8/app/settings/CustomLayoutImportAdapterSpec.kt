@@ -24,7 +24,7 @@ class CustomLayoutImportAdapterSpec : FunSpec({
     beforeTest {
         contentResolver = mockk()
         availableLayouts = mockk()
-        uri = Uri.parse("content://layouts/import")
+        uri = mockk()
     }
 
     test("uses the wildcard MIME contract for OpenDocument") {
