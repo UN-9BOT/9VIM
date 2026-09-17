@@ -254,6 +254,19 @@ class AvailableLayoutsSpec : WordSpec({
             verify(exactly = 0) { currentLayout.set(customLayout) }
         }
 
+        "reject a zero-layer URI without mutating current or history" {
+            val uri = "content://layouts/empty"
+            every { customLayout.path } returns Uri.parse(uri)
+            every { customLayout.loadKeyboardData(any(), any()) } returns KeyboardData().right()
+
+            val availableLayouts = AvailableLayouts(layoutLoader, context)
+            availableLayouts.importLayout(customLayout).shouldBeLeft()
+
+            historyValue shouldBe emptySet()
+            currentValue shouldBe embeddedLayouts.first().first
+            verify(exactly = 0) { currentLayout.set(customLayout) }
+        }
+
         "leave current layout unchanged when an inactive URI becomes stale" {
             val uri = "content://layouts/stale"
             every { uri.toCustomLayout() } returns customLayout
