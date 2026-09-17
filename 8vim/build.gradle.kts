@@ -17,6 +17,10 @@ plugins {
     jacoco
 }
 
+aboutLibraries {
+    excludeFields = arrayOf("generated")
+}
+
 apply(plugin = "checkstyle")
 
 tasks.register<Checkstyle>("checkstyle") {
