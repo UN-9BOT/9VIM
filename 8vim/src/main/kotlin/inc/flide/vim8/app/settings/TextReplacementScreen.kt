@@ -88,7 +88,11 @@ fun TextReplacementScreen() = Screen {
                             Text(stringRes(R.string.settings__text_replacement__abbreviation_label))
                         },
                         placeholder = {
-                            Text(stringRes(R.string.settings__text_replacement__abbreviation_placeholder))
+                            Text(
+                                stringRes(
+                                    R.string.settings__text_replacement__abbreviation_placeholder
+                                )
+                            )
                         },
                         singleLine = true,
                         isError = dialogError != null,
@@ -105,7 +109,11 @@ fun TextReplacementScreen() = Screen {
                             Text(stringRes(R.string.settings__text_replacement__expansion_label))
                         },
                         placeholder = {
-                            Text(stringRes(R.string.settings__text_replacement__expansion_placeholder))
+                            Text(
+                                stringRes(
+                                    R.string.settings__text_replacement__expansion_placeholder
+                                )
+                            )
                         },
                         singleLine = false,
                         maxLines = 3

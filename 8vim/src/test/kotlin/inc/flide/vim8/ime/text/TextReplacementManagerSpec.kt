@@ -196,20 +196,18 @@ class TextReplacementManagerSpec : FunSpec({
 private const val SEP = "|||"
 
 private class TextReplacementManagerTestSubject {
-    fun parseEntries(rawSet: Set<String>): Map<String, String> =
-        rawSet.mapNotNull { entry ->
-            val idx = entry.indexOf(SEP)
-            if (idx < 0) null
-            else entry.substring(0, idx) to entry.substring(idx + SEP.length)
-        }.toMap()
+    fun parseEntries(rawSet: Set<String>): Map<String, String> = rawSet.mapNotNull { entry ->
+        val idx = entry.indexOf(SEP)
+        if (idx < 0) {
+            null
+        } else {
+            entry.substring(0, idx) to entry.substring(idx + SEP.length)
+        }
+    }.toMap()
 
-    fun encodeEntry(abbreviation: String, expansion: String): String =
-        "$abbreviation$SEP$expansion"
+    fun encodeEntry(abbreviation: String, expansion: String): String = "$abbreviation$SEP$expansion"
 
-    fun findReplacement(
-        textBeforeCursor: String,
-        map: Map<String, String>
-    ): Pair<Int, String>? {
+    fun findReplacement(textBeforeCursor: String, map: Map<String, String>): Pair<Int, String>? {
         if (textBeforeCursor.isEmpty()) return null
         val triggerChars = setOf(' ', '.', ',', '!', '?')
         val boundaryChar = textBeforeCursor.last()
@@ -217,8 +215,11 @@ private class TextReplacementManagerTestSubject {
         val withoutBoundary = textBeforeCursor.dropLast(1)
         if (withoutBoundary.isEmpty()) return null
         val lastBoundaryIdx = withoutBoundary.indexOfLast { it in triggerChars }
-        val word = if (lastBoundaryIdx == -1) withoutBoundary
-        else withoutBoundary.substring(lastBoundaryIdx + 1)
+        val word = if (lastBoundaryIdx == -1) {
+            withoutBoundary
+        } else {
+            withoutBoundary.substring(lastBoundaryIdx + 1)
+        }
         if (word.isEmpty()) return null
         val expansion = map[word] ?: return null
         return Pair(word.length + 1, "$expansion$boundaryChar")

@@ -68,10 +68,12 @@ private fun fileSelector(): () -> Unit {
             return@rememberLauncherForActivityResult
         }
         val layouts = availableLayouts.get() ?: return@rememberLauncherForActivityResult
-        when (val result = CustomLayoutImportAdapter(
-            context.contentResolver,
-            layouts
-        ).importLayout(it)) {
+        when (
+            val result = CustomLayoutImportAdapter(
+                context.contentResolver,
+                layouts
+            ).importLayout(it)
+        ) {
             is CustomLayoutImportResult.Success -> Unit
             is CustomLayoutImportResult.Failure -> {
                 val title = if (result.error is ExceptionWrapperError) {

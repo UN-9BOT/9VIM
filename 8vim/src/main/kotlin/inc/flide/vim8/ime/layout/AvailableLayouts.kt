@@ -89,10 +89,12 @@ class AvailableLayouts(private val layoutLoader: LayoutLoader, private val conte
     private fun updateHistory(path: String) {
         val history = LinkedHashSet(prefs.layout.custom.history.get())
         history.remove(path)
-        prefs.layout.custom.history.set(LinkedHashSet<String>().apply {
-            add(path)
-            addAll(history)
-        })
+        prefs.layout.custom.history.set(
+            LinkedHashSet<String>().apply {
+                add(path)
+                addAll(history)
+            }
+        )
     }
 
     private fun upsert(layout: Layout<*>, keyboardData: KeyboardData) {

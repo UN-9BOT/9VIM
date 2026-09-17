@@ -231,14 +231,16 @@ class LayoutSpec : FunSpec({
                 }
                 every { layoutLoader.loadKeyboardData(any()) } returns keyboardData.right()
 
-                first.loadKeyboardData(layoutLoader, context) shouldBeRight KeyboardData.info.name.set(
+                val firstWithName = KeyboardData.info.name.set(
                     keyboardData,
                     "first.yaml"
                 )
-                second.loadKeyboardData(layoutLoader, context) shouldBeRight KeyboardData.info.name.set(
+                val secondWithName = KeyboardData.info.name.set(
                     keyboardData,
                     "second.yaml"
                 )
+                first.loadKeyboardData(layoutLoader, context) shouldBeRight firstWithName
+                second.loadKeyboardData(layoutLoader, context) shouldBeRight secondWithName
             }
 
             test("reparses changed bytes for the same URI") {

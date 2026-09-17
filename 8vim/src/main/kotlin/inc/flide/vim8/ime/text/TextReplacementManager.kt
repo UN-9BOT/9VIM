@@ -46,8 +46,11 @@ class TextReplacementManager(context: Context) {
     internal fun parseEntries(rawSet: Set<String>): Map<String, String> =
         rawSet.mapNotNull { entry ->
             val idx = entry.indexOf(ENTRY_SEPARATOR)
-            if (idx < 0) null
-            else entry.substring(0, idx) to entry.substring(idx + ENTRY_SEPARATOR.length)
+            if (idx < 0) {
+                null
+            } else {
+                entry.substring(0, idx) to entry.substring(idx + ENTRY_SEPARATOR.length)
+            }
         }.toMap()
 
     /**
@@ -80,8 +83,11 @@ class TextReplacementManager(context: Context) {
 
         // The current word starts after the last trigger/whitespace character.
         val lastBoundaryIdx = withoutBoundary.indexOfLast { it in TRIGGER_CHARS }
-        val word = if (lastBoundaryIdx == -1) withoutBoundary
-        else withoutBoundary.substring(lastBoundaryIdx + 1)
+        val word = if (lastBoundaryIdx == -1) {
+            withoutBoundary
+        } else {
+            withoutBoundary.substring(lastBoundaryIdx + 1)
+        }
 
         if (word.isEmpty()) return null
 
@@ -99,10 +105,9 @@ class TextReplacementManager(context: Context) {
     /**
      * Returns all stored abbreviation→expansion pairs as a list sorted by abbreviation.
      */
-    fun getEntries(): List<Pair<String, String>> =
-        parseEntries(prefs.textReplacement.entries.get())
-            .toList()
-            .sortedBy { it.first }
+    fun getEntries(): List<Pair<String, String>> = parseEntries(prefs.textReplacement.entries.get())
+        .toList()
+        .sortedBy { it.first }
 
     /**
      * Persists a new abbreviation→expansion pair.

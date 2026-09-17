@@ -200,4 +200,13 @@ if [ ! -x "$ROOT_DIR/gradlew" ]; then
     exit 1
 fi
 
+# Gradle's test report writer uses the process locale for report paths/content.
+# Some minimal CI/container images default to POSIX/ASCII, which makes Unicode
+# Kotest display names fail the task even though the tests themselves pass.
+# Prefer the portable UTF-8 C locale for this deterministic repository gate.
+if locale -a 2>/dev/null | grep -Eiq '^C\.UTF-8$|^C\.utf8$'; then
+    export LANG=C.UTF-8
+    export LC_ALL=C.UTF-8
+fi
+
 exec "$ROOT_DIR/gradlew" --no-daemon :8vim:testDebugUnitTest :8vim:lint :8vim:ktlintCheck :8vim:checkstyle :8vim:assembleDebug
