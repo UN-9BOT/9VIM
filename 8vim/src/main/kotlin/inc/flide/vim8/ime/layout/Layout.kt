@@ -68,10 +68,37 @@ fun safeLoadKeyboardData(layoutLoader: LayoutLoader, context: Context): Keyboard
                 history.remove(current.path.toString())
                 historyPref.set(history)
             }
-            prefs.layout.current.reset()
         }
         .fold(
-            { prefs.layout.current.default.loadKeyboardData(layoutLoader, context) },
+            {
+                val previous = prefs.layout.previousValid.get()
+                val previousData = if (previous != current) {
+                    previous
+                        .loadKeyboardData(layoutLoader, context)
+                        .getOrNone()
+                        .filterNot { it.totalLayers == 0 }
+                } else {
+                    none()
+                }
+                previousData.fold(
+                    {
+                        if (previous is CustomLayout) {
+                            val historyPref = prefs.layout.custom.history
+                            val history = LinkedHashSet(historyPref.get())
+                            if (history.remove(previous.path.toString())) {
+                                historyPref.set(history)
+                            }
+                            prefs.layout.previousValid.set(prefs.layout.previousValid.default)
+                        }
+                        prefs.layout.current.set(prefs.layout.current.default)
+                        prefs.layout.current.default.loadKeyboardData(layoutLoader, context)
+                    },
+                    {
+                        prefs.layout.current.set(previous)
+                        Either.Right(it)
+                    }
+                )
+            },
             { Either.Right(it) }
         )
         .getOrNull()
