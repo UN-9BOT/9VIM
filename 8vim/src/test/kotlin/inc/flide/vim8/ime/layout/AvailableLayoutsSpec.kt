@@ -1,6 +1,7 @@
 package inc.flide.vim8.ime.layout
 
 import android.content.Context
+import android.net.Uri
 import arrow.core.left
 import arrow.core.right
 import inc.flide.vim8.appPreferenceModel
@@ -153,6 +154,38 @@ class AvailableLayoutsSpec : WordSpec({
             val availableLayouts = AvailableLayouts(layoutLoader, context)
             availableLayouts.selectLayout(index)
             availableLayouts.index shouldBe 0
+        }
+    }
+
+    "Import a custom layout" should {
+        "validate before adding a new URI and activate it" {
+            val uri = "content://layouts/new"
+            val keyboardData = arbKeyboardData.next()
+            every { uri.toCustomLayout() } returns customLayout
+            every { customLayout.path } returns Uri.parse(uri)
+            every { customLayout.loadKeyboardData(any(), any()) } returns keyboardData.right()
+            every { historyData.get() } returns emptySet()
+
+            val availableLayouts = AvailableLayouts(layoutLoader, context)
+
+            availableLayouts.updateKeyboardData(customLayout) shouldBe true
+            verify { historyData.set(match { it == linkedSetOf(uri) }) }
+            verify { currentLayout.set(customLayout) }
+        }
+
+        "leave current layout unchanged when an inactive URI becomes stale" {
+            val uri = "content://layouts/stale"
+            every { uri.toCustomLayout() } returns customLayout
+            every { customLayout.path } returns Uri.parse(uri)
+            every { customLayout.loadKeyboardData(any(), any()) } returns ExceptionWrapperError(
+                Exception("revoked")
+            ).left()
+            every { historyData.get() } returns setOf(uri)
+            justRun { historyData.set(any()) }
+
+            AvailableLayouts(layoutLoader, context)
+
+            verify(exactly = 0) { currentLayout.reset() }
         }
     }
 })
