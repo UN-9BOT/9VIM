@@ -68,8 +68,14 @@ The roadmap stabilizes the existing Android IME before introducing persistent mu
   4. Removing or breaking a profile always selects a valid fallback and never leaves the IME with no enabled layout.
   5. Selecting a profile updates the visible keyboard without full-IME recreation or visible flicker.
 
-**Plans**: TBD
+**Plans**: 4 plans
 **UI hint**: yes
+
+Plans:
+- [ ] 02-01-PLAN.md — Trace aggregate language state through migration, persistence, manager, and IME.
+- [ ] 02-02-PLAN.md — Complete invariant-safe profile mutations and SAF import lifecycle.
+- [ ] 02-03-PLAN.md — Deliver the accessible unified multilingual settings workflow.
+- [ ] 02-04-PLAN.md — Harden and complete privacy-scoped backup/restore.
 
 ### Phase 3: Reliable Language Switching and Context
 
