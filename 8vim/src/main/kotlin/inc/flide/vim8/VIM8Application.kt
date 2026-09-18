@@ -7,10 +7,11 @@ import androidx.appcompat.app.AppCompatDelegate
 import inc.flide.vim8.ime.clipboard.ClipboardManager
 import inc.flide.vim8.ime.editor.EditorInstance
 import inc.flide.vim8.ime.keyboard.text.KeyboardManager
+import inc.flide.vim8.ime.language.AndroidLanguageLayoutCatalog
+import inc.flide.vim8.ime.language.LanguageBootstrapReader
+import inc.flide.vim8.ime.language.LanguageManager
 import inc.flide.vim8.ime.layout.Cache
 import inc.flide.vim8.ime.layout.YamlLayoutLoader
-import inc.flide.vim8.ime.language.AndroidLanguageLayoutCatalog
-import inc.flide.vim8.ime.language.LanguageManager
 import inc.flide.vim8.ime.layout.parsers.CborParser
 import inc.flide.vim8.ime.layout.parsers.yaml.YamlParser
 import inc.flide.vim8.ime.nlp.SuggestionsManager
@@ -39,7 +40,7 @@ class VIM8Application : Application() {
         LanguageManager(
             preference = prefs.language.config,
             catalog = AndroidLanguageLayoutCatalog(layoutLoader.value, this),
-            persistedConfig = prefs.language.config.getOrNull()
+            bootstrapState = LanguageBootstrapReader.read(this, prefs)
         )
     }
     val clipboardManager = lazy { ClipboardManager(this) }

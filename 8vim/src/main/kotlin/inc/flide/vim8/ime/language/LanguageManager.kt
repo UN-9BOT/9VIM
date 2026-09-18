@@ -45,12 +45,20 @@ class AndroidLanguageLayoutCatalog(
 class LanguageManager(
     private val preference: PreferenceData<LanguageConfig>,
     private val catalog: LanguageLayoutCatalog,
-    persistedConfig: LanguageConfig?
+    private val bootstrapState: LanguageBootstrapState
 ) {
     private val embeddedProfiles = catalog.embeddedProfiles()
-    private val freshInstall = persistedConfig == null
+    private val bootstrapCandidate = if (bootstrapState.aggregatePresent) {
+        bootstrapState.aggregate ?: LanguageConfig.fresh(embeddedProfiles)
+    } else {
+        LanguageMigration.migrate(
+            legacy = bootstrapState.legacy,
+            embeddedProfiles = embeddedProfiles,
+            isValid = ::isSourceValid
+        )
+    }
     private val initialConfig = reconcile(
-        persistedConfig ?: LanguageConfig.fresh(embeddedProfiles)
+        bootstrapCandidate
     )
     private val initialSession = resolveInitialSession(initialConfig)
     private val resolvedInitialConfig = initialSession?.let { session ->
@@ -67,10 +75,23 @@ class LanguageManager(
 
     init {
         mutableSession.value = initialSession
-        if (freshInstall || resolvedInitialConfig != persistedConfig) {
+        if (!bootstrapState.aggregatePresent || resolvedInitialConfig != bootstrapState.aggregate) {
             preference.set(resolvedInitialConfig)
         }
     }
+
+    constructor(
+        preference: PreferenceData<LanguageConfig>,
+        catalog: LanguageLayoutCatalog,
+        persistedConfig: LanguageConfig?
+    ) : this(
+        preference = preference,
+        catalog = catalog,
+        bootstrapState = LanguageBootstrapState(
+            aggregatePresent = persistedConfig != null,
+            aggregate = persistedConfig
+        )
+    )
 
     fun selectActive(profileId: String): Either<LayoutError, ResolvedLanguageSession> {
         val profile = mutableConfig.value.profiles.firstOrNull {
@@ -122,6 +143,17 @@ class LanguageManager(
                 keyboardData.right()
             }
         }
+
+    private fun isSourceValid(source: LanguageSource): Boolean {
+        val profile = when (source) {
+            is LanguageSource.Embedded -> embeddedProfiles.firstOrNull {
+                it.source == source
+            } ?: return false
+
+            is LanguageSource.Custom -> LanguageProfile.custom(source.sourceUri)
+        }
+        return loadValid(profile).isRight()
+    }
 
     private fun languageError(message: String): LayoutError =
         ExceptionWrapperError(IllegalArgumentException(message))

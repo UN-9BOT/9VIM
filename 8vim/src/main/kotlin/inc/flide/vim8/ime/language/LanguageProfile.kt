@@ -27,13 +27,11 @@ data class LanguageProfile(
             source = LanguageSource.Embedded(layoutId)
         )
 
-        fun custom(
-            sourceUri: String,
-            id: String = "custom:$sourceUri"
-        ): LanguageProfile = LanguageProfile(
-            id = id,
-            source = LanguageSource.Custom(sourceUri)
-        )
+        fun custom(sourceUri: String, id: String = "custom:$sourceUri"): LanguageProfile =
+            LanguageProfile(
+                id = id,
+                source = LanguageSource.Custom(sourceUri)
+            )
     }
 }
 
@@ -88,11 +86,7 @@ object LanguageConfigSerDe : PreferenceSerDe<LanguageConfig> {
     private val mapper = JsonMapper.builder().build().registerKotlinModule()
     private val localePattern = Regex("^[A-Za-z]{2,8}([_-][A-Za-z0-9]{1,8})*$")
 
-    override fun serialize(
-        editor: SharedPreferences.Editor,
-        key: String,
-        value: LanguageConfig
-    ) {
+    override fun serialize(editor: SharedPreferences.Editor, key: String, value: LanguageConfig) {
         editor.putString(key, encode(value))
     }
 

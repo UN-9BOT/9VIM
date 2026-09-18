@@ -13,11 +13,11 @@ import inc.flide.vim8.datastore.Datastore
 import inc.flide.vim8.datastore.model.PreferenceMigrationEntry
 import inc.flide.vim8.datastore.model.PreferenceModel
 import inc.flide.vim8.datastore.model.observeAsState
-import inc.flide.vim8.ime.layout.EmbeddedLayout
-import inc.flide.vim8.ime.layout.LayoutSerDe
 import inc.flide.vim8.ime.language.LanguageConfig
 import inc.flide.vim8.ime.language.LanguageConfigSerDe
 import inc.flide.vim8.ime.language.LanguageProfile
+import inc.flide.vim8.ime.layout.EmbeddedLayout
+import inc.flide.vim8.ime.layout.LayoutSerDe
 import inc.flide.vim8.ime.ui.KeyboardLayoutMode
 import inc.flide.vim8.ime.ui.RectSerDe
 import inc.flide.vim8.theme.ThemeMode

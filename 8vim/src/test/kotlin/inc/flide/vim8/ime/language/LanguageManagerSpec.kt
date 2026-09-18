@@ -9,6 +9,7 @@ import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import io.mockk.clearMocks
 import io.mockk.mockk
 import io.mockk.verify
 
@@ -142,6 +143,73 @@ class LanguageManagerSpec : DescribeSpec({
                 lastValidProfileId = en.id
             )
             LanguageConfigSerDe.decode(LanguageConfigSerDe.encode(duplicate)).shouldBeNull()
+        }
+
+        it("uses legacy only when the aggregate key is truly absent") {
+            val preference = mockk<PreferenceData<LanguageConfig>>(relaxed = true)
+            val custom = LanguageSource.Custom("content://layouts/current")
+            val catalog = object : LanguageLayoutCatalog {
+                override fun embeddedProfiles() = listOf(en, ru, lv)
+                override fun load(profile: LanguageProfile) = keyboard().right()
+            }
+            val absent = LanguageManager(
+                preference,
+                catalog,
+                LanguageBootstrapState(
+                    aggregatePresent = false,
+                    aggregate = null,
+                    legacy = LegacyLanguageState(
+                        current = custom,
+                        customHistory = setOf(custom.sourceUri)
+                    )
+                )
+            )
+            absent.config.value.activeProfileId shouldBe "custom:${custom.sourceUri}"
+            verify(exactly = 1) { preference.set(absent.config.value) }
+
+            clearMocks(preference, answers = false, recordedCalls = true)
+            val malformedPresent = LanguageManager(
+                preference,
+                catalog,
+                LanguageBootstrapState(
+                    aggregatePresent = true,
+                    aggregate = null,
+                    legacy = LegacyLanguageState(
+                        current = custom,
+                        customHistory = setOf(custom.sourceUri)
+                    )
+                )
+            )
+            malformedPresent.config.value.activeProfileId shouldBe en.id
+            val resurrected = malformedPresent.config.value.profiles.any {
+                it.id == "custom:${custom.sourceUri}"
+            }
+            resurrected shouldBe false
+            verify(exactly = 1) { preference.set(malformedPresent.config.value) }
+        }
+
+        it("does not rewrite or resurrect legacy state after a valid aggregate restart") {
+            val preference = mockk<PreferenceData<LanguageConfig>>(relaxed = true)
+            val catalog = object : LanguageLayoutCatalog {
+                override fun embeddedProfiles() = listOf(en, ru, lv)
+                override fun load(profile: LanguageProfile) = keyboard().right()
+            }
+            val aggregate = LanguageConfig.fresh(listOf(en, ru, lv))
+
+            val manager = LanguageManager(
+                preference,
+                catalog,
+                LanguageBootstrapState(
+                    aggregatePresent = true,
+                    aggregate = aggregate,
+                    legacy = LegacyLanguageState(
+                        current = LanguageSource.Custom("content://layouts/ignored")
+                    )
+                )
+            )
+
+            manager.config.value shouldBe aggregate
+            verify(exactly = 0) { preference.set(any()) }
         }
     }
 })
