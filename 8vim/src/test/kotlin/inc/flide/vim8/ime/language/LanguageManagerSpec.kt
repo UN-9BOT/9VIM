@@ -7,6 +7,7 @@ import inc.flide.vim8.ime.layout.models.KeyboardData
 import inc.flide.vim8.ime.layout.models.error.ExceptionWrapperError
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.mockk.mockk
 import io.mockk.verify
@@ -72,6 +73,75 @@ class LanguageManagerSpec : DescribeSpec({
             verify(exactly = 1) { preference.set(any()) }
             bootConfig shouldBe initial
             bootSession?.profile?.id shouldBe en.id
+        }
+    }
+
+    describe("legacy migration") {
+        it("keeps a valid custom current first and sorts valid history by canonical URI") {
+            val currentUri = "content://layouts/z-current"
+            val firstUri = "content://layouts/a-first"
+            val staleUri = "content://layouts/m-stale"
+            val migrated = LanguageMigration.migrate(
+                legacy = LegacyLanguageState(
+                    current = LanguageSource.Custom(currentUri),
+                    customHistory = setOf(currentUri, staleUri, firstUri),
+                    previousValid = LanguageSource.Embedded("ru")
+                ),
+                embeddedProfiles = listOf(ru, en, lv),
+                isValid = { source ->
+                    source !is LanguageSource.Custom || source.sourceUri != staleUri
+                }
+            )
+
+            migrated.profiles.filter(LanguageProfile::enabled).map { it.id } shouldContainExactly
+                listOf("custom:$currentUri", "custom:$firstUri")
+            migrated.activeProfileId shouldBe "custom:$currentUri"
+            migrated.primaryProfileId shouldBe "custom:$currentUri"
+            migrated.lastValidProfileId shouldBe "custom:$currentUri"
+            migrated.profiles.none { it.id == "custom:$staleUri" } shouldBe true
+        }
+
+        it("uses valid previous for stale active and embedded en when both are stale") {
+            val stale = LanguageSource.Custom("content://layouts/stale")
+            val previous = LanguageSource.Custom("content://layouts/previous")
+
+            val restored = LanguageMigration.migrate(
+                legacy = LegacyLanguageState(
+                    current = stale,
+                    customHistory = setOf(stale.sourceUri, previous.sourceUri),
+                    previousValid = previous
+                ),
+                embeddedProfiles = listOf(en, ru, lv),
+                isValid = { it == previous || it is LanguageSource.Embedded }
+            )
+            restored.activeProfileId shouldBe "custom:${previous.sourceUri}"
+            restored.profiles.filter(LanguageProfile::enabled).map { it.id } shouldContainExactly
+                listOf("custom:${previous.sourceUri}")
+
+            val fallback = LanguageMigration.migrate(
+                legacy = LegacyLanguageState(
+                    current = stale,
+                    customHistory = setOf(stale.sourceUri, previous.sourceUri),
+                    previousValid = previous
+                ),
+                embeddedProfiles = listOf(ru, lv, en),
+                isValid = { it is LanguageSource.Embedded }
+            )
+            fallback.activeProfileId shouldBe en.id
+            fallback.primaryProfileId shouldBe en.id
+            fallback.lastValidProfileId shouldBe en.id
+            fallback.profiles.filter(LanguageProfile::enabled).map { it.id } shouldBe listOf(en.id)
+        }
+
+        it("rejects malformed and duplicate aggregate snapshots") {
+            LanguageConfigSerDe.decode("{not-json").shouldBeNull()
+            val duplicate = LanguageConfig(
+                profiles = listOf(en.copy(enabled = true), en.copy(enabled = true)),
+                primaryProfileId = en.id,
+                activeProfileId = en.id,
+                lastValidProfileId = en.id
+            )
+            LanguageConfigSerDe.decode(LanguageConfigSerDe.encode(duplicate)).shouldBeNull()
         }
     }
 })
