@@ -8,6 +8,7 @@ import inc.flide.vim8.ime.layout.models.error.ExceptionWrapperError
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.mockk.clearMocks
 import io.mockk.mockk
@@ -210,6 +211,57 @@ class LanguageManagerSpec : DescribeSpec({
 
             manager.config.value shouldBe aggregate
             verify(exactly = 0) { preference.set(any()) }
+        }
+    }
+
+    describe("aggregate normalization") {
+        it("round-trips ordered profiles nullable metadata and all references") {
+            val custom = LanguageProfile.custom("content://layouts/custom", "profile:stable")
+                .copy(displayName = "Custom", localeTag = null, enabled = true)
+            val original = LanguageConfig(
+                profiles = listOf(
+                    ru.copy(displayName = "Русский", localeTag = "ru-RU", enabled = true),
+                    custom,
+                    en.copy(enabled = true)
+                ),
+                primaryProfileId = ru.id,
+                activeProfileId = custom.id,
+                lastValidProfileId = en.id
+            )
+
+            LanguageConfigSerDe.decode(LanguageConfigSerDe.encode(original)) shouldBe original
+        }
+
+        it("repairs duplicate identities invalid references and an empty enabled set") {
+            val preference = mockk<PreferenceData<LanguageConfig>>(relaxed = true)
+            val uri = "content://layouts/duplicate"
+            val candidate = LanguageConfig(
+                profiles = listOf(
+                    ru,
+                    LanguageProfile.custom(uri, "custom:first"),
+                    LanguageProfile.custom(uri, "custom:duplicate"),
+                    en
+                ),
+                primaryProfileId = "missing:primary",
+                activeProfileId = "missing:active",
+                lastValidProfileId = "missing:last"
+            )
+            val catalog = object : LanguageLayoutCatalog {
+                override fun embeddedProfiles() = listOf(en, ru, lv)
+                override fun load(profile: LanguageProfile) = keyboard().right()
+            }
+
+            val manager = LanguageManager(preference, catalog, persistedConfig = candidate)
+            val repaired = manager.config.value
+
+            repaired.profiles.map { it.id } shouldContainExactly
+                listOf(ru.id, "custom:first", en.id, lv.id)
+            repaired.profiles.filter(LanguageProfile::enabled).map { it.id } shouldBe listOf(en.id)
+            repaired.primaryProfileId shouldBe en.id
+            repaired.activeProfileId shouldBe en.id
+            repaired.lastValidProfileId shouldBe en.id
+            manager.session.value.shouldNotBeNull().profile.id shouldBe en.id
+            verify(exactly = 1) { preference.set(repaired) }
         }
     }
 })
