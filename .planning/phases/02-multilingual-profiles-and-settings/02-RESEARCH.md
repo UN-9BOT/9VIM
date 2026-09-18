@@ -689,16 +689,25 @@ needed for one-time migration. [ASSUMED]
 Планировщик должен freeze A1–A7 as explicit implementation decisions before
 their first persisted-format task; A2/A4/A5 are one-way or costly once shipped.
 
-## Open Questions
+## Open Questions — RESOLVED
 
-1. **Where will executable Android proof run?**
-   - What we know: host has Java 26, not Java 17; local Android API 36 and Build
-     Tools 36.0.0 are missing, while Docker client/server 29.5.1 are available.
-     [VERIFIED: environment probes 2026-09-18]
-   - What's unclear: the prior compatible Docker SDK volume invocation is not
-     versioned as a repository command. [VERIFIED: repository search]
-   - Recommendation: use exact-SHA CI or re-use/document the Phase 1 pinned
-     Docker environment before claiming green product checks. [ASSUMED]
+1. **RESOLVED — executable Android proof route.**
+   - Phase 1 proved exact SHA `5ffcd291ed865be4299a960a81370d642a281265`
+     with `thyrlian/android-sdk:latest`, Java 17, Android API 36, Build Tools
+     36.0.0, `C.UTF-8`, and mounted SDK/Gradle caches. The full
+     `./scripts/baseline-check.sh` and focused JVM suite both returned
+     `BUILD SUCCESSFUL`. [VERIFIED: 01-06-SUMMARY.md:109-138]
+   - Reusable command for Phase 2 (run from repository root; named volumes keep
+     the installed SDK and Gradle caches):
+
+     `docker run --rm -t -e LANG=C.UTF-8 -e ANDROID_HOME=/opt/android-sdk -e ANDROID_SDK_ROOT=/opt/android-sdk -e GRADLE_USER_HOME=/root/.gradle -v "$PWD:/workspace" -v 9vim-android-sdk:/opt/android-sdk -v 9vim-gradle:/root/.gradle -w /workspace thyrlian/android-sdk:latest bash -lc 'yes | sdkmanager "platforms;android-36" "build-tools;36.0.0" >/dev/null && test "$(java -version 2>&1 | sed -n '\''1s/.*version "\([0-9][0-9]*\).*/\1/p'\'')" = 17 && ./scripts/baseline-check.sh'`
+
+   - Exact-SHA CI alternative: open a PR whose head is the candidate SHA; the
+     unconditional `.github/workflows/pr-test.yml` baseline job provisions
+     Temurin 17 plus `platforms;android-36` and `build-tools;36.0.0`, then runs
+     `./scripts/baseline-check.sh`. Record the workflow URL and verified head
+     SHA; a run for any other SHA is not phase evidence. [VERIFIED:
+     .github/workflows/pr-test.yml:1-29; 01-06-SUMMARY.md:109-138]
 
 2. **No unresolved product question remains.**
    - What we know: CONTEXT locks defaults, identity, interactions, fallbacks,
