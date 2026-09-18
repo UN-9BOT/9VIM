@@ -68,13 +68,13 @@ The roadmap stabilizes the existing Android IME before introducing persistent mu
   4. Removing or breaking a profile always selects a valid fallback and never leaves the IME with no enabled layout.
   5. Selecting a profile updates the visible keyboard without full-IME recreation or visible flicker.
 
-**Plans**: 4 plans
+**Plans**: 1/4 plans executed
 **UI hint**: yes
 
 Plans:
 **Wave 1**
 
-- [ ] 02-01-PLAN.md — Trace aggregate language state through migration, persistence, manager, and IME.
+- [x] 02-01-PLAN.md — Trace aggregate language state through migration, persistence, manager, and IME.
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -158,7 +158,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Stable Fork Baseline | 7/7 | Complete    | 2026-09-18 |
-| 2. Multilingual Profiles and Settings | 0/TBD | Not started | - |
+| 2. Multilingual Profiles and Settings | 1/4 | In Progress|  |
 | 3. Reliable Language Switching and Context | 0/TBD | Not started | - |
 | 4. Language-Scoped Suggestions | 0/TBD | Not started | - |
 | 5. Correction and Context Prediction | 0/TBD | Not started | - |
