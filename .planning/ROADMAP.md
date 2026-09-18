@@ -72,9 +72,20 @@ The roadmap stabilizes the existing Android IME before introducing persistent mu
 **UI hint**: yes
 
 Plans:
+**Wave 1**
+
 - [ ] 02-01-PLAN.md — Trace aggregate language state through migration, persistence, manager, and IME.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 02-02-PLAN.md — Complete invariant-safe profile mutations and SAF import lifecycle.
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 02-03-PLAN.md — Deliver the accessible unified multilingual settings workflow.
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
 - [ ] 02-04-PLAN.md — Harden and complete privacy-scoped backup/restore.
 
 ### Phase 3: Reliable Language Switching and Context
