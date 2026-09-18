@@ -9,6 +9,8 @@ import inc.flide.vim8.ime.editor.EditorInstance
 import inc.flide.vim8.ime.keyboard.text.KeyboardManager
 import inc.flide.vim8.ime.layout.Cache
 import inc.flide.vim8.ime.layout.YamlLayoutLoader
+import inc.flide.vim8.ime.language.AndroidLanguageLayoutCatalog
+import inc.flide.vim8.ime.language.LanguageManager
 import inc.flide.vim8.ime.layout.parsers.CborParser
 import inc.flide.vim8.ime.layout.parsers.yaml.YamlParser
 import inc.flide.vim8.ime.nlp.SuggestionsManager
@@ -33,6 +35,13 @@ class VIM8Application : Application() {
     private val layoutParser = YamlParser()
     val cache = lazy { Cache(CborParser(), this) }
     val layoutLoader = lazy { YamlLayoutLoader(layoutParser, cache.value, this) }
+    val languageManager = lazy {
+        LanguageManager(
+            preference = prefs.language.config,
+            catalog = AndroidLanguageLayoutCatalog(layoutLoader.value, this),
+            persistedConfig = prefs.language.config.getOrNull()
+        )
+    }
     val clipboardManager = lazy { ClipboardManager(this) }
     val backupManager = lazy { BackupManager(this) }
     val themeManager = lazy { ThemeManager(this) }
@@ -46,6 +55,7 @@ class VIM8Application : Application() {
         super.onCreate()
         vim8ApplicationReference = WeakReference(this)
         prefs.initialize(this)
+        languageManager.value
 
         when (prefs.theme.mode.get()) {
             ThemeMode.DARK -> AppCompatDelegate.setDefaultNightMode(
@@ -83,6 +93,7 @@ private tailrec fun Context.vim8Application(): VIM8Application {
 
 fun Context.cache() = this.vim8Application().cache
 fun Context.layoutLoader() = this.vim8Application().layoutLoader
+fun Context.languageManager() = this.vim8Application().languageManager
 fun Context.themeManager() = this.vim8Application().themeManager
 fun Context.keyboardManager() = this.vim8Application().keyboardManager
 fun Context.clipboardManager() = this.vim8Application().clipboardManager

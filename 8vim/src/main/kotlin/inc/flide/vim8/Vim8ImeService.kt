@@ -19,6 +19,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.AbstractComposeView
+import androidx.lifecycle.lifecycleScope
 import inc.flide.vim8.datastore.model.observeAsState
 import inc.flide.vim8.ime.input.ImeUiMode
 import inc.flide.vim8.ime.input.InputFeedbackController
@@ -30,9 +31,7 @@ import inc.flide.vim8.ime.keyboard.view.NumberLayout
 import inc.flide.vim8.ime.keyboard.view.SelectionLayout
 import inc.flide.vim8.ime.keyboard.view.SuggestionsBar
 import inc.flide.vim8.ime.keyboard.view.SymbolsLayout
-import inc.flide.vim8.ime.layout.loadKeyboardData
 import inc.flide.vim8.ime.layout.models.KeyboardData
-import inc.flide.vim8.ime.layout.safeLoadKeyboardData
 import inc.flide.vim8.ime.lifecycle.LifecycleInputMethodService
 import inc.flide.vim8.ime.ui.ImeLayout
 import inc.flide.vim8.ime.ui.KeyboardLayoutMode
@@ -42,6 +41,8 @@ import inc.flide.vim8.lib.compose.ProvideLocalizedResources
 import inc.flide.vim8.lib.compose.SystemUiIme
 import inc.flide.vim8.lib.util.InputMethodUtils
 import java.lang.ref.WeakReference
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.launch
 
 private var vim8ImeServiceReference = WeakReference<Vim8ImeService?>(null)
 
@@ -68,7 +69,7 @@ class Vim8ImeService : LifecycleInputMethodService() {
     private val themeManager by themeManager()
     private val keyboardManager by keyboardManager()
     private val editorInstance by editorInstance()
-    private val layoutLoader by layoutLoader()
+    private val languageManager by languageManager()
     private val suggestionsManager by suggestionsManager()
 
     private var resourcesContext by mutableStateOf(this as Context)
@@ -92,11 +93,11 @@ class Vim8ImeService : LifecycleInputMethodService() {
             isFloating = it == KeyboardLayoutMode.FLOATING
         }
 
-        prefs.layout.current.observe {
-            it.loadKeyboardData(layoutLoader, this)
-                .onRight { keyboardData ->
-                    this.keyboardData = keyboardData
-                }
+        keyboardData = languageManager.session.value?.keyboardData
+        lifecycleScope.launch {
+            languageManager.session.filterNotNull().collect { session ->
+                keyboardData = session.keyboardData
+            }
         }
     }
 
@@ -108,7 +109,7 @@ class Vim8ImeService : LifecycleInputMethodService() {
 
     override fun onCreateInputView(): View {
         super.installViewTreeOwners()
-        keyboardData = safeLoadKeyboardData(layoutLoader, this)
+        keyboardData = languageManager.session.value?.keyboardData
         val composeView = ComposeInputView()
         inputWindowView = composeView
         return composeView

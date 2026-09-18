@@ -15,6 +15,9 @@ import inc.flide.vim8.datastore.model.PreferenceModel
 import inc.flide.vim8.datastore.model.observeAsState
 import inc.flide.vim8.ime.layout.EmbeddedLayout
 import inc.flide.vim8.ime.layout.LayoutSerDe
+import inc.flide.vim8.ime.language.LanguageConfig
+import inc.flide.vim8.ime.language.LanguageConfigSerDe
+import inc.flide.vim8.ime.language.LanguageProfile
 import inc.flide.vim8.ime.ui.KeyboardLayoutMode
 import inc.flide.vim8.ime.ui.RectSerDe
 import inc.flide.vim8.theme.ThemeMode
@@ -23,8 +26,9 @@ import inc.flide.vim8.theme.lightColorPalette
 
 fun appPreferenceModel() = Datastore.getOrCreatePreferenceModel(AppPrefs::class, ::AppPrefs)
 
-class AppPrefs : PreferenceModel(9) {
+class AppPrefs : PreferenceModel(10) {
     val layout = Layout()
+    val language = Language()
     val theme = Theme()
     val clipboard = Clipboard()
     val keyboard = Keyboard()
@@ -77,6 +81,14 @@ class AppPrefs : PreferenceModel(9) {
                 default = emptySet()
             )
         }
+    }
+
+    inner class Language {
+        val config = custom(
+            key = "prefs_language_config",
+            default = LanguageConfig.fresh(listOf(LanguageProfile.embedded("en"))),
+            serde = LanguageConfigSerDe
+        )
     }
 
     inner class InputFeedback {

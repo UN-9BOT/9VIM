@@ -16,7 +16,6 @@ import arrow.core.raise.catch
 import arrow.core.right
 import arrow.core.some
 import inc.flide.vim8.R
-import inc.flide.vim8.appPreferenceModel
 import inc.flide.vim8.cache
 import inc.flide.vim8.datastore.model.PreferenceSerDe
 import inc.flide.vim8.ime.layout.models.KeyboardData
@@ -55,53 +54,6 @@ interface Layout<T> {
     fun inputStream(context: Context): Either<LayoutError, InputStream>
     fun md5(context: Context): Option<String>
     fun defaultName(context: Context): String
-}
-
-fun safeLoadKeyboardData(layoutLoader: LayoutLoader, context: Context): KeyboardData? {
-    val prefs by appPreferenceModel()
-    val current = prefs.layout.current.get()
-    return current.loadKeyboardData(layoutLoader, context)
-        .onLeft {
-            if (current is CustomLayout) {
-                val historyPref = prefs.layout.custom.history
-                val history = LinkedHashSet(historyPref.get())
-                history.remove(current.path.toString())
-                historyPref.set(history)
-            }
-        }
-        .fold(
-            {
-                val previous = prefs.layout.previousValid.get()
-                val previousData = if (previous != current) {
-                    previous
-                        .loadKeyboardData(layoutLoader, context)
-                        .getOrNone()
-                        .filterNot { it.totalLayers == 0 }
-                } else {
-                    none()
-                }
-                previousData.fold(
-                    {
-                        if (previous is CustomLayout) {
-                            val historyPref = prefs.layout.custom.history
-                            val history = LinkedHashSet(historyPref.get())
-                            if (history.remove(previous.path.toString())) {
-                                historyPref.set(history)
-                            }
-                            prefs.layout.previousValid.set(prefs.layout.previousValid.default)
-                        }
-                        prefs.layout.current.set(prefs.layout.current.default)
-                        prefs.layout.current.default.loadKeyboardData(layoutLoader, context)
-                    },
-                    {
-                        prefs.layout.current.set(previous)
-                        Either.Right(it)
-                    }
-                )
-            },
-            { Either.Right(it) }
-        )
-        .getOrNull()
 }
 
 private fun InputStream.readSnapshot(): Either<LayoutError, ByteArray> = try {
